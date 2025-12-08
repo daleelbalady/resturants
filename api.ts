@@ -1,35 +1,38 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://menu-api.daleelbalady.com';
+const MENU_API_BASE_URL = import.meta.env.VITE_MENU_API_URL || 'https://menu-api.daleelbalady.com';
+const MAIN_API_BASE_URL = import.meta.env.VITE_MAIN_API_URL || 'https://api.daleelbalady.com';
 
 export const API_ENDPOINTS = {
-    // Shop endpoints
-    getShop: (shopId: string) => `${API_BASE_URL}/api/shop/${shopId}`,
-    getMyShop: () => `${API_BASE_URL}/api/shop/my`,
-    updateShop: () => `${API_BASE_URL}/api/shop`,
-    getShopDetails: (identifier: string) => `${API_BASE_URL}/api/shops/public/details/${identifier}`, // Added this line
+    // Shop endpoints (from main backend - Node.js)
+    getShopDetails: (identifier: string) => `${MAIN_API_BASE_URL}/api/shops/public/details/${identifier}`,
 
-    // Menu endpoints
-    getMenu: (shopId: string) => `${API_BASE_URL}/api/menu/${shopId}`,
-    getMenuItem: (itemId: string) => `${API_BASE_URL}/api/menu/item/${itemId}`,
-    createMenuItem: () => `${API_BASE_URL}/api/menu`,
-    updateMenuItem: (itemId: string) => `${API_BASE_URL}/api/menu/${itemId}`,
-    deleteMenuItem: (itemId: string) => `${API_BASE_URL}/api/menu/${itemId}`,
+    // Legacy shop endpoints (Go backend - deprecated, keeping for reference)
+    getShop: (shopId: string) => `${MENU_API_BASE_URL}/api/shop/${shopId}`,
+    getMyShop: () => `${MENU_API_BASE_URL}/api/shop/my`,
+    updateShop: () => `${MENU_API_BASE_URL}/api/shop`,
 
-    // Order endpoints
-    createOrder: () => `${API_BASE_URL}/api/orders`,
-    getOrders: () => `${API_BASE_URL}/api/orders`,
-    getOrder: (orderId: string) => `${API_BASE_URL}/api/orders/${orderId}`,
-    updateOrderStatus: (orderId: string) => `${API_BASE_URL}/api/orders/${orderId}/status`,
-    cancelOrder: (orderId: string) => `${API_BASE_URL}/api/orders/${orderId}`,
+    // Menu endpoints (Go backend)
+    getMenu: (shopId: string) => `${MENU_API_BASE_URL}/api/menu/${shopId}`,
+    getMenuItem: (itemId: string) => `${MENU_API_BASE_URL}/api/menu/item/${itemId}`,
+    createMenuItem: () => `${MENU_API_BASE_URL}/api/menu`,
+    updateMenuItem: (itemId: string) => `${MENU_API_BASE_URL}/api/menu/${itemId}`,
+    deleteMenuItem: (itemId: string) => `${MENU_API_BASE_URL}/api/menu/${itemId}`,
 
-    // Table endpoints
-    getTables: (shopId: string) => `${API_BASE_URL}/api/tables/${shopId}`,
-    createTable: () => `${API_BASE_URL}/api/tables`,
-    updateTableStatus: (tableId: string) => `${API_BASE_URL}/api/tables/${tableId}/status`,
-    deleteTable: (tableId: string) => `${API_BASE_URL}/api/tables/${tableId}`,
+    // Order endpoints (Go backend)
+    createOrder: () => `${MENU_API_BASE_URL}/api/orders`,
+    getOrders: () => `${MENU_API_BASE_URL}/api/orders`,
+    getOrder: (orderId: string) => `${MENU_API_BASE_URL}/api/orders/${orderId}`,
+    updateOrderStatus: (orderId: string) => `${MENU_API_BASE_URL}/api/orders/${orderId}/status`,
+    cancelOrder: (orderId: string) => `${MENU_API_BASE_URL}/api/orders/${orderId}`,
+
+    // Table endpoints (Go backend)
+    getTables: (shopId: string) => `${MENU_API_BASE_URL}/api/tables/${shopId}`,
+    createTable: () => `${MENU_API_BASE_URL}/api/tables`,
+    updateTableStatus: (tableId: string) => `${MENU_API_BASE_URL}/api/tables/${tableId}/status`,
+    deleteTable: (tableId: string) => `${MENU_API_BASE_URL}/api/tables/${tableId}`,
 
     // Health check
-    health: () => `${API_BASE_URL}/health`,
+    health: () => `${MENU_API_BASE_URL}/health`,
 };
 
 // API utility functions
