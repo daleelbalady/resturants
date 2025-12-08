@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
     getShop: (shopId: string) => `${API_BASE_URL}/api/shop/${shopId}`,
     getMyShop: () => `${API_BASE_URL}/api/shop/my`,
     updateShop: () => `${API_BASE_URL}/api/shop`,
+    getShopDetails: (identifier: string) => `${API_BASE_URL}/api/shops/public/details/${identifier}`, // Added this line
 
     // Menu endpoints
     getMenu: (shopId: string) => `${API_BASE_URL}/api/menu/${shopId}`,

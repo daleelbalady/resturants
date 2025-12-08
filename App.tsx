@@ -47,13 +47,18 @@ import AuthCallback from './components/AuthCallback';
 const MenuAppWrapper = () => {
   const { slug } = useParams();
   const [view, setView] = useState<'customer' | 'admin'>('customer');
-  // Default to shop-1 if no slug provided (for dev/testing)
-  const shopId = slug || 'shop-1';
+  const navigate = useNavigate();
+
+  // If no slug provided, redirect to home
+  if (!slug) {
+    navigate('/');
+    return null;
+  }
 
   return (
-    <ConfigProvider shopId={shopId}>
-      <CartProvider shopId={shopId}>
-        {view === 'customer' ? <MenuApp setView={setView} shopId={shopId} /> : <AdminDashboard />}
+    <ConfigProvider shopId={slug}>
+      <CartProvider shopId={slug}>
+        {view === 'customer' ? <MenuApp setView={setView} shopId={slug} /> : <AdminDashboard />}
 
         {/* Helper to go back to customer view from admin */}
         {view === 'admin' && (
@@ -219,12 +224,28 @@ const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId: st
   );
 };
 
+// Empty home page component
+const HomePage = () => {
+  return (
+    <Layout>
+      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
+        <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-4">
+          Welcome to Menu Platform
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">
+          Access your shop menu by visiting /your-shop-slug
+        </p>
+      </div>
+    </Layout>
+  );
+};
+
 const App = () => {
   return (
     <Routes>
       <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/shop/:slug" element={<MenuAppWrapper />} />
-      <Route path="/" element={<MenuAppWrapper />} />
+      <Route path="/:slug" element={<MenuAppWrapper />} />
+      <Route path="/" element={<HomePage />} />
     </Routes>
   );
 };

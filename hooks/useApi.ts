@@ -16,8 +16,9 @@ export const useShop = (shopId: string = DEFAULT_SHOP_ID) => {
         const fetchShop = async () => {
             try {
                 setLoading(true);
-                const data = await api.get(API_ENDPOINTS.getShop(shopId));
-                setShop(data);
+                // Use the new endpoint that supports slug or ID and returns ownerId
+                const data = await api.get(API_ENDPOINTS.getShopDetails(shopId));
+                setShop(data.shop); // Note: API returns { success: true, shop: { ... } }
                 setError(null);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch shop');
