@@ -40,8 +40,37 @@ const FloatingCartButton = () => {
   );
 };
 
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import AuthCallback from './components/AuthCallback';
+
+// Helper component to handle routing params and data fetching
+const MenuAppWrapper = () => {
+  const { slug } = useParams();
+  const [view, setView] = useState<'customer' | 'admin'>('customer');
+  // Default to shop-1 if no slug provided (for dev/testing)
+  const shopId = slug || 'shop-1';
+
+  return (
+    <ConfigProvider shopId={shopId}>
+      <CartProvider shopId={shopId}>
+        {view === 'customer' ? <MenuApp setView={setView} shopId={shopId} /> : <AdminDashboard />}
+
+        {/* Helper to go back to customer view from admin */}
+        {view === 'admin' && (
+          <button
+            onClick={() => setView('customer')}
+            className="fixed bottom-6 left-6 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full font-bold shadow-xl"
+          >
+            ← Back to Menu
+          </button>
+        )}
+      </CartProvider>
+    </ConfigProvider>
+  );
+};
+
 // Inner component to access context
-const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId?: string }> = ({ setView, shopId = 'shop-1' }) => {
+const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId: string }> = ({ setView, shopId }) => {
   const { translations, language } = useConfig();
   const t = translations;
 
@@ -49,9 +78,12 @@ const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId?: s
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
 
-  // Fetch menu and shop from API
-  const { menuItems, loading: menuLoading } = useMenu(shopId);
+  // Fetch shop first
   const { shop, loading: shopLoading } = useShop(shopId);
+
+  // Then fetch menu using the shop's user ID (owner ID)
+  // We only fetch menu if shop is loaded and has a userId
+  const { menuItems, loading: menuLoading } = useMenu(shop?.userId);
 
   // Get unique categories from menu items
   const categories = useMemo(() => {
@@ -188,25 +220,12 @@ const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId?: s
 };
 
 const App = () => {
-  const [view, setView] = useState<'customer' | 'admin'>('customer');
-  const shopId = 'shop-1'; // In production, this could come from URL params or config
-
   return (
-    <ConfigProvider shopId={shopId}>
-      <CartProvider shopId={shopId}>
-        {view === 'customer' ? <MenuApp setView={setView} shopId={shopId} /> : <AdminDashboard />}
-
-        {/* Helper to go back to customer view from admin (for demo purposes) */}
-        {view === 'admin' && (
-          <button
-            onClick={() => setView('customer')}
-            className="fixed bottom-6 left-6 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full font-bold shadow-xl"
-          >
-            ← Back to Menu
-          </button>
-        )}
-      </CartProvider>
-    </ConfigProvider>
+    <Routes>
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/shop/:slug" element={<MenuAppWrapper />} />
+      <Route path="/" element={<MenuAppWrapper />} />
+    </Routes>
   );
 };
 

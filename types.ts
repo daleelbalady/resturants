@@ -85,6 +85,7 @@ export interface Order {
 
 export interface Shop {
   id: string;
+  userId: string;
   name: LocalizedString;
   description: LocalizedString;
   coverImage: string;

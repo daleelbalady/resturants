@@ -34,12 +34,14 @@ export const useShop = (shopId: string = DEFAULT_SHOP_ID) => {
 };
 
 // Hook to fetch menu items
-export const useMenu = (shopId: string = DEFAULT_SHOP_ID) => {
+export const useMenu = (shopId?: string) => {
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const fetchMenu = async () => {
+        if (!shopId) return;
+
         try {
             setLoading(true);
             const data = await api.get(API_ENDPOINTS.getMenu(shopId));
@@ -54,7 +56,9 @@ export const useMenu = (shopId: string = DEFAULT_SHOP_ID) => {
     };
 
     useEffect(() => {
-        fetchMenu();
+        if (shopId) {
+            fetchMenu();
+        }
     }, [shopId]);
 
     return { menuItems, loading, error, refetch: fetchMenu };
