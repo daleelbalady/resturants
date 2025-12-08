@@ -109,61 +109,86 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
         </div>
 
         {/* Gallery Preview */}
-      </MotionDiv>
-
-      {/* Map View */}
-      <AnimatePresence>
-        {showMap && (
+        {shop.galleryImages && shop.galleryImages.length > 0 && (
           <MotionDiv
-            initial={{ height: 0, opacity: 0, marginTop: 0 }}
-            animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
-            exit={{ height: 0, opacity: 0, marginTop: 0 }}
-            className="overflow-hidden rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-inner"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8 overflow-hidden"
           >
-            <div className="w-full h-64 sm:h-80 relative bg-gray-100 dark:bg-zinc-800">
-              <iframe
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                scrolling="no"
-                marginHeight={0}
-                marginWidth={0}
-                src={`https://maps.google.com/maps?q=${shop.locationLat},${shop.locationLon}&z=15&output=embed`}
-                className={`w-full h-full ${theme === 'dark' ? 'invert-[.90] hue-rotate-180 contrast-[.9] grayscale-[.2]' : ''}`}
-                style={{ border: 0 }}
-              ></iframe>
-              <div className="absolute bottom-4 right-4 bg-white dark:bg-zinc-900 px-4 py-2 rounded-lg shadow-lg text-xs font-bold text-gray-900 dark:text-white z-10 pointer-events-none">
-                {shop.city}
-              </div>
+            <div className="flex items-center gap-2 mb-3">
+              <ImageIcon className="w-4 h-4 text-gold-500" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{t.gallery[language]}</h3>
             </div>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x">
+              {shop.galleryImages.map((img, idx) => (
+                <MotionDiv
+                  key={idx}
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => setSelectedImage(img)}
+                  className="flex-shrink-0 w-32 h-24 sm:w-48 sm:h-32 rounded-xl overflow-hidden cursor-pointer shadow-md snap-start"
+                >
+                  <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                </MotionDiv>
+              ))}
+            </div>
+          </MotionDiv>
+        )}
+
+        {/* Map View */}
+        <AnimatePresence>
+          {showMap && (
+            <MotionDiv
+              initial={{ height: 0, opacity: 0, marginTop: 0 }}
+              animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
+              exit={{ height: 0, opacity: 0, marginTop: 0 }}
+              className="overflow-hidden rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-inner"
+            >
+              <div className="w-full h-64 sm:h-80 relative bg-gray-100 dark:bg-zinc-800">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  scrolling="no"
+                  marginHeight={0}
+                  marginWidth={0}
+                  src={`https://maps.google.com/maps?q=${shop.locationLat},${shop.locationLon}&z=15&output=embed`}
+                  className={`w-full h-full ${theme === 'dark' ? 'invert-[.90] hue-rotate-180 contrast-[.9] grayscale-[.2]' : ''}`}
+                  style={{ border: 0 }}
+                ></iframe>
+                <div className="absolute bottom-4 right-4 bg-white dark:bg-zinc-900 px-4 py-2 rounded-lg shadow-lg text-xs font-bold text-gray-900 dark:text-white z-10 pointer-events-none">
+                  {shop.city}
+                </div>
+              </div>
+            </MotionDiv>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Lightbox for Gallery */}
+      <AnimatePresence>
+        {selectedImage && (
+          <MotionDiv
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm"
+            onClick={() => setSelectedImage(null)}
+          >
+            <button className="absolute top-4 right-4 text-white p-2 bg-white/10 rounded-full hover:bg-white/20">
+              <X className="w-6 h-6" />
+            </button>
+            <MotionImg
+              layoutId={`gallery-image-${selectedImage}`}
+              src={selectedImage}
+              alt="Gallery Fullscreen"
+              className="max-w-full max-h-[90vh] rounded-lg shadow-2xl"
+              onClick={(e: React.MouseEvent<HTMLImageElement, MouseEvent>) => e.stopPropagation()}
+            />
           </MotionDiv>
         )}
       </AnimatePresence>
     </div>
-
-      {/* Lightbox for Gallery */ }
-  <AnimatePresence>
-    {selectedImage && (
-      <MotionDiv
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm"
-        onClick={() => setSelectedImage(null)}
-      >
-        <button className="absolute top-4 right-4 text-white p-2 bg-white/10 rounded-full hover:bg-white/20">
-          <X className="w-6 h-6" />
-        </button>
-        <MotionImg
-          layoutId={`gallery-image-${selectedImage}`}
-          src={selectedImage}
-          alt="Gallery Fullscreen"
-          className="max-w-full max-h-[90vh] rounded-lg shadow-2xl"
-          onClick={(e: React.MouseEvent<HTMLImageElement, MouseEvent>) => e.stopPropagation()}
-        />
-      </MotionDiv>
-    )}
-  </AnimatePresence>
-    </div >
   );
 };
+```
