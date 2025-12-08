@@ -1,14 +1,22 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppContextType, Language, Theme, Table } from '../types';
-import { TRANSLATIONS, MOCK_TABLES } from '../constants';
+import { TRANSLATIONS } from '../constants';
+import { useTables } from '../hooks/useApi';
 
 const ConfigContext = createContext<AppContextType | undefined>(undefined);
 
-export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const ConfigProvider: React.FC<{ children: ReactNode; shopId?: string }> = ({ children, shopId = 'shop-1' }) => {
   const [language, setLanguage] = useState<Language>('en');
   const [theme, setTheme] = useState<Theme>('dark');
-  const [tables, setTables] = useState<Table[]>(MOCK_TABLES);
+
+  // Fetch tables from API
+  const { tables: apiTables, createTable: apiCreateTable, updateTableStatus: apiUpdateTableStatus, deleteTable: apiDeleteTable } = useTables(shopId);
+  const [tables, setTables] = useState<Table[]>(apiTables);
+
+  // Update local tables when API tables change
+  useEffect(() => {
+    setTables(apiTables);
+  }, [apiTables]);
 
   useEffect(() => {
     // Apply theme class to html element
@@ -25,7 +33,7 @@ export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const html = document.documentElement;
     html.lang = language;
     html.dir = language === 'ar' ? 'rtl' : 'ltr';
-    
+
     // Update font family based on language
     if (language === 'ar') {
       document.body.classList.add('font-arabic');
@@ -36,16 +44,37 @@ export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, [language]);
 
-  const addTable = (table: Table) => {
-    setTables(prev => [...prev, table]);
+  const addTable = async (table: Table) => {
+    try {
+      await apiCreateTable(table);
+      // Tables will be updated via useEffect when apiTables changes
+    } catch (error) {
+      console.error('Failed to add table:', error);
+      // Fallback to local state if API fails
+      setTables(prev => [...prev, table]);
+    }
   };
 
-  const removeTable = (id: string) => {
-    setTables(prev => prev.filter(t => t.id !== id));
+  const removeTable = async (id: string) => {
+    try {
+      await apiDeleteTable(id);
+      // Tables will be updated via useEffect when apiTables changes
+    } catch (error) {
+      console.error('Failed to remove table:', error);
+      // Fallback to local state if API fails
+      setTables(prev => prev.filter(t => t.id !== id));
+    }
   };
 
-  const updateTableStatus = (id: string, isOccupied: boolean) => {
-    setTables(prev => prev.map(t => t.id === id ? { ...t, isOccupied } : t));
+  const updateTableStatus = async (id: string, isOccupied: boolean) => {
+    try {
+      await apiUpdateTableStatus(id, isOccupied);
+      // Tables will be updated via useEffect when apiTables changes
+    } catch (error) {
+      console.error('Failed to update table status:', error);
+      // Fallback to local state if API fails
+      setTables(prev => prev.map(t => t.id === id ? { ...t, isOccupied } : t));
+    }
   };
 
   return (

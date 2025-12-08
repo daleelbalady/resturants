@@ -1,11 +1,13 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { CartContextType, CartItem, MenuItem } from '../types';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { CartContextType, CartItem, MenuItem, Order, OrderMethod } from '../types';
+import { useOrders } from '../hooks/useApi';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const CartProvider: React.FC<{ children: ReactNode; shopId?: string }> = ({ children, shopId = 'shop-1' }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const { createOrder } = useOrders();
 
   // Calculate cart total whenever cart changes
   const cartTotal = cart.reduce((total, item) => total + item.totalPrice, 0);
@@ -14,7 +16,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addToCart = (menuItem: MenuItem, quantity: number, selectedModifiers: Record<string, string[]>, notes: string) => {
     // Calculate total price for this specific configuration
     let itemTotal = menuItem.basePrice;
-    
+
     menuItem.modifierGroups.forEach(group => {
       const selectedOptionIds = selectedModifiers[group.id] || [];
       selectedOptionIds.forEach(optId => {
@@ -64,6 +66,43 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCart([]);
   };
 
+  // Submit order to API
+  const submitOrder = async (
+    customerName: string,
+    customerPhone: string,
+    method: OrderMethod,
+    tableId?: string,
+    guests?: number,
+    deliveryAddress?: string,
+    deliveryLocation?: { lat: number; lng: number }
+  ) => {
+    try {
+      const orderData = {
+        shopId,
+        customerName,
+        customerPhone,
+        method,
+        items: cart.map(item => ({
+          menuItemId: item.menuItem.id,
+          quantity: item.quantity,
+          selectedModifiers: item.selectedModifiers,
+          notes: item.notes,
+        })),
+        totalAmount: cartTotal,
+        ...(method === 'dine_in' && { tableId, guests }),
+        ...(method === 'delivery' && { deliveryAddress, deliveryLocation }),
+      };
+
+      const response = await createOrder(orderData as any);
+      clearCart();
+      setIsCartOpen(false);
+      return response;
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      throw error;
+    }
+  };
+
   return (
     <CartContext.Provider value={{
       cart,
@@ -71,6 +110,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       removeFromCart,
       updateQuantity,
       clearCart,
+      submitOrder,
       cartTotal,
       itemCount,
       isCartOpen,

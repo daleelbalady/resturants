@@ -9,8 +9,9 @@ import { ProductModal } from './components/ProductModal';
 import { ShopHeader } from './components/ShopHeader';
 import { CartDrawer } from './components/CartDrawer';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { MOCK_MENU, MOCK_SHOP } from './constants';
+import { MOCK_SHOP } from './constants';
 import { MenuItem } from './types';
+import { useMenu, useShop } from './hooks/useApi';
 
 const MotionButton = motion.button as any;
 const MotionDiv = motion.div as any;
@@ -18,7 +19,7 @@ const MotionDiv = motion.div as any;
 // Floating Cart Button Component
 const FloatingCartButton = () => {
   const { setIsCartOpen, itemCount } = useCart();
-  
+
   return (
     <AnimatePresence>
       {itemCount > 0 && (
@@ -40,120 +41,145 @@ const FloatingCartButton = () => {
 };
 
 // Inner component to access context
-const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void }> = ({ setView }) => {
+const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId?: string }> = ({ setView, shopId = 'shop-1' }) => {
   const { translations, language } = useConfig();
   const t = translations;
-  
+
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
 
-  // Derive categories from menu
-  const categories = useMemo(() => {
-    const cats = ['All', ...Array.from(new Set(MOCK_MENU.map(p => p.category)))];
-    return cats;
-  }, []);
+  // Fetch menu and shop from API
+  const { menuItems, loading: menuLoading } = useMenu(shopId);
+  const { shop, loading: shopLoading } = useShop(shopId);
 
-  // Filter products
+  // Get unique categories from menu items
+  const categories = useMemo(() => {
+    const cats = ['All', ...new Set(menuItems.map(item => item.category))];
+    return cats;
+  }, [menuItems]);
+
+  // Filter products based on search and category
   const filteredProducts = useMemo(() => {
-    return MOCK_MENU.filter(product => {
-      // Search in both English and Arabic names
+    return menuItems.filter(product => {
       const searchLower = searchQuery.toLowerCase();
       const nameEn = product.name.en.toLowerCase();
-      const nameAr = product.name.ar; 
-      
+      const nameAr = product.name.ar;
+
       const matchesSearch = nameEn.includes(searchLower) || nameAr.includes(searchQuery);
       const matchesCategory = activeCategory === 'All' || product.category === activeCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, activeCategory]);
+  }, [searchQuery, activeCategory, menuItems]);
+
+  // Show loading state if data is still being fetched
+  if (menuLoading || shopLoading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen text-gray-500 dark:text-gray-400">
+          Loading menu...
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show error state if shop data is not available
+  if (!shop) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen text-red-500">
+          Error: Shop not found or failed to load.
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout onDashboardClick={() => setView('admin')} showDashboardLink={true}>
       {/* Shop Profile Header */}
-      <ShopHeader shop={MOCK_SHOP} />
+      <ShopHeader shop={shop} />
 
       {/* Search Bar (Floating) */}
       <div className="max-w-xl mx-auto px-4 -mt-16 relative z-20 mb-10">
-        <MotionDiv 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="relative group shadow-2xl rounded-full"
+        <MotionDiv
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="relative group shadow-2xl rounded-full"
         >
-            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400 group-focus-within:text-gold-500 transition-colors" />
-            </div>
-            <input 
-                type="text" 
-                placeholder={t.search[language]} 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-12 pr-6 py-4 rounded-full border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-all"
-            />
+          <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400 group-focus-within:text-gold-500 transition-colors" />
+          </div>
+          <input
+            type="text"
+            placeholder={t.search[language]}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="block w-full pl-12 pr-6 py-4 rounded-full border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-all"
+          />
         </MotionDiv>
       </div>
 
       {/* Category Filter */}
       <div className="sticky top-[72px] z-30 py-4 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-gray-200 dark:border-zinc-800 mb-8">
         <div className="max-w-7xl mx-auto px-4 overflow-x-auto no-scrollbar">
-            <div className="flex space-x-2 rtl:space-x-reverse min-w-max px-2">
-                {categories.map((cat, idx) => (
-                    <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={`
+          <div className="flex space-x-2 rtl:space-x-reverse min-w-max px-2">
+            {categories.map((cat, idx) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`
                             px-5 py-2 rounded-full text-sm font-bold transition-all duration-300 border
-                            ${activeCategory === cat 
-                                ? 'bg-gray-900 dark:bg-white text-white dark:text-black border-transparent shadow-md scale-105' 
-                                : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800'}
+                            ${activeCategory === cat
+                    ? 'bg-gray-900 dark:bg-white text-white dark:text-black border-transparent shadow-md scale-105'
+                    : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800'}
                         `}
-                    >
-                        {cat === 'All' ? t.all[language] : cat}
-                    </button>
-                ))}
-            </div>
+              >
+                {cat === 'All' ? t.all[language] : cat}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Product Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 min-h-[50vh]">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AnimatePresence>
+          <AnimatePresence>
             {filteredProducts.map((product) => (
-                <ProductCard 
-                    key={product.id} 
-                    product={product} 
-                    onSelect={setSelectedProduct} 
-                />
+              <ProductCard
+                key={product.id}
+                product={product}
+                onSelect={setSelectedProduct}
+              />
             ))}
-            </AnimatePresence>
+          </AnimatePresence>
         </div>
-        
+
         {filteredProducts.length === 0 && (
-            <MotionDiv 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }}
-                className="text-center py-20"
+          <MotionDiv
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20"
+          >
+            <div className="inline-block p-4 rounded-full bg-gray-100 dark:bg-zinc-800 mb-4">
+              <Filter className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No items found.</p>
+            <button
+              onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}
+              className="mt-4 text-gold-500 hover:text-gold-600 font-bold"
             >
-                <div className="inline-block p-4 rounded-full bg-gray-100 dark:bg-zinc-800 mb-4">
-                    <Filter className="w-8 h-8 text-gray-400" />
-                </div>
-                <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No items found.</p>
-                <button 
-                    onClick={() => {setSearchQuery(''); setActiveCategory('All');}}
-                    className="mt-4 text-gold-500 hover:text-gold-600 font-bold"
-                >
-                    Clear Filters
-                </button>
-            </MotionDiv>
+              Clear Filters
+            </button>
+          </MotionDiv>
         )}
       </div>
 
       {/* Interactive Elements */}
-      <ProductModal 
-        product={selectedProduct} 
-        onClose={() => setSelectedProduct(null)} 
+      <ProductModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
       />
       <CartDrawer />
       <FloatingCartButton />
@@ -163,20 +189,21 @@ const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void }> = ({ set
 
 const App = () => {
   const [view, setView] = useState<'customer' | 'admin'>('customer');
+  const shopId = 'shop-1'; // In production, this could come from URL params or config
 
   return (
-    <ConfigProvider>
-      <CartProvider>
-        {view === 'customer' ? <MenuApp setView={setView} /> : <AdminDashboard />}
-        
+    <ConfigProvider shopId={shopId}>
+      <CartProvider shopId={shopId}>
+        {view === 'customer' ? <MenuApp setView={setView} shopId={shopId} /> : <AdminDashboard />}
+
         {/* Helper to go back to customer view from admin (for demo purposes) */}
         {view === 'admin' && (
-            <button 
-                onClick={() => setView('customer')}
-                className="fixed bottom-6 left-6 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full font-bold shadow-xl"
-            >
-                ← Back to Menu
-            </button>
+          <button
+            onClick={() => setView('customer')}
+            className="fixed bottom-6 left-6 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full font-bold shadow-xl"
+          >
+            ← Back to Menu
+          </button>
         )}
       </CartProvider>
     </ConfigProvider>

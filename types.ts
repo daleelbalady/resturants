@@ -64,19 +64,19 @@ export interface Order {
   id: string;
   customerName: string;
   customerPhone: string;
-  
+
   // Logic Flow
   method: OrderMethod;
-  
+
   // If Dine In
   tableId?: string;
   guests?: number;
-  
+
   // If Delivery
   deliveryProvider?: DeliveryProvider;
   deliveryAddress?: string;
   deliveryLocation?: Location; // Coordinates from map
-  
+
   items: CartItem[];
   totalAmount: number;
   status: OrderStatus;
@@ -119,12 +119,21 @@ export interface AppContextType {
 
 export interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: MenuItem, quantity: number, modifiers: Record<string, string[]>, notes: string) => void;
+  addToCart: (menuItem: MenuItem, quantity: number, selectedModifiers: Record<string, string[]>, notes: string) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, delta: number) => void;
   clearCart: () => void;
+  submitOrder: (
+    customerName: string,
+    customerPhone: string,
+    method: OrderMethod,
+    tableId?: string,
+    guests?: number,
+    deliveryAddress?: string,
+    deliveryLocation?: { lat: number; lng: number }
+  ) => Promise<any>;
   cartTotal: number;
   itemCount: number;
   isCartOpen: boolean;
-  setIsCartOpen: (isOpen: boolean) => void;
+  setIsCartOpen: (open: boolean) => void;
 }
