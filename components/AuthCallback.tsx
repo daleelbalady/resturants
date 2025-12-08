@@ -33,7 +33,7 @@ const AuthCallback = () => {
 
                 if (data.success && data.token) {
                     // Store token
-                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('authToken', data.token);
 
                     // Store user data if provided
                     if (data.user) {
