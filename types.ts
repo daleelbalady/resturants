@@ -85,21 +85,24 @@ export interface Order {
 
 export interface Shop {
   id: string;
-  userId: string;
-  name: LocalizedString;
-  description: LocalizedString;
-  coverImage: string;
+  name: string;
+  name_ar?: string;
+  description: string;
+  description_ar?: string;
   logoImage: string;
-  galleryImages: string[];
-  locationLat: number;
-  locationLon: number;
-  city: string;
+  coverImage: string;
   phone: string;
-  website: string;
-  isVerified: boolean;
+  email?: string;
+  website?: string;
+  city?: string;
+  locationLat?: number;
+  locationLon?: number;
+  galleryImages?: string[];
   rating: number;
   reviewCount: number;
-  currency: LocalizedString;
+  isVerified: boolean;
+  userId: string; // Owner ID for fetching menu
+  ownerId?: string; // Alias
 }
 
 export type Language = 'en' | 'ar';

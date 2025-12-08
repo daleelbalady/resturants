@@ -56,7 +56,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
             >
               {/* Using mix-blend-difference to ensure visibility on both dark cover and white background */}
               <h1 className="text-3xl sm:text-4xl font-black text-white mix-blend-difference drop-shadow-sm">
-                {shop.name[language]}
+                {language === 'ar' && shop.name_ar ? shop.name_ar : shop.name}
               </h1>
               {shop.isVerified && (
                 <div className="text-blue-500 bg-white dark:bg-zinc-800 rounded-full p-0.5" title={t.verified[language]}>
@@ -71,7 +71,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
               transition={{ delay: 0.3 }}
               className="text-gray-600 dark:text-gray-400 text-sm sm:text-base leading-relaxed max-w-2xl mb-4"
             >
-              {shop.description[language]}
+              {language === 'ar' && shop.description_ar ? shop.description_ar : shop.description}
             </MotionP>
 
             {/* Stats & Actions */}
@@ -191,4 +191,3 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
     </div>
   );
 };
-```
