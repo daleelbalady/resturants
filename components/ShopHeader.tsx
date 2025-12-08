@@ -8,6 +8,10 @@ interface ShopHeaderProps {
   shop: Shop;
 }
 
+const MotionDiv = motion.div as any;
+const MotionP = motion.p as any;
+const MotionImg = motion.img as any;
+
 export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
   const { translations, language, theme } = useConfig();
   const t = translations;
@@ -17,7 +21,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
   return (
     <div className="relative bg-white dark:bg-zinc-950 rounded-b-[2rem] shadow-xl overflow-hidden mb-8">
       {/* Cover Image Parallax */}
-      <motion.div 
+      <MotionDiv 
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
         transition={{ duration: 0.8 }}
@@ -29,22 +33,22 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      </motion.div>
+      </MotionDiv>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 -mt-16 sm:-mt-20 pb-8">
         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
           {/* Logo */}
-          <motion.div 
+          <MotionDiv 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-zinc-900 shadow-xl overflow-hidden bg-white flex-shrink-0"
           >
             <img src={shop.logoImage} alt="Logo" className="w-full h-full object-cover" />
-          </motion.div>
+          </MotionDiv>
 
           {/* Text Content */}
           <div className="flex-1 sm:pt-10">
-            <motion.div 
+            <MotionDiv 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
@@ -59,19 +63,19 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
                   <CheckCircle className="w-5 h-5 fill-current" />
                 </div>
               )}
-            </motion.div>
+            </MotionDiv>
 
-            <motion.p 
+            <MotionP 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
               className="text-gray-600 dark:text-gray-400 text-sm sm:text-base leading-relaxed max-w-2xl mb-4"
             >
               {shop.description[language]}
-            </motion.p>
+            </MotionP>
 
             {/* Stats & Actions */}
-            <motion.div 
+            <MotionDiv 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
@@ -100,12 +104,12 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
                   <MapPin className="w-4 h-4" />
                   {t.viewMap[language]}
                 </button>
-            </motion.div>
+            </MotionDiv>
           </div>
         </div>
 
         {/* Gallery Preview */}
-        <motion.div 
+        <MotionDiv 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
@@ -117,22 +121,22 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
           </div>
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x">
              {shop.galleryImages.map((img, idx) => (
-                <motion.div 
+                <MotionDiv 
                     key={idx}
                     whileHover={{ scale: 1.05 }}
                     onClick={() => setSelectedImage(img)}
                     className="flex-shrink-0 w-32 h-24 sm:w-48 sm:h-32 rounded-xl overflow-hidden cursor-pointer shadow-md snap-start"
                 >
                     <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
-                </motion.div>
+                </MotionDiv>
              ))}
           </div>
-        </motion.div>
+        </MotionDiv>
 
         {/* Map View */}
         <AnimatePresence>
             {showMap && (
-                <motion.div 
+                <MotionDiv 
                     initial={{ height: 0, opacity: 0, marginTop: 0 }}
                     animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
                     exit={{ height: 0, opacity: 0, marginTop: 0 }}
@@ -154,7 +158,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
                             {shop.city}
                         </div>
                     </div>
-                </motion.div>
+                </MotionDiv>
             )}
         </AnimatePresence>
       </div>
@@ -162,7 +166,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
       {/* Lightbox for Gallery */}
       <AnimatePresence>
         {selectedImage && (
-            <motion.div 
+            <MotionDiv 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -172,14 +176,14 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ shop }) => {
                 <button className="absolute top-4 right-4 text-white p-2 bg-white/10 rounded-full hover:bg-white/20">
                     <X className="w-6 h-6" />
                 </button>
-                <motion.img 
+                <MotionImg 
                     layoutId={`gallery-image-${selectedImage}`}
                     src={selectedImage} 
                     alt="Gallery Fullscreen" 
                     className="max-w-full max-h-[90vh] rounded-lg shadow-2xl"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e: React.MouseEvent<HTMLImageElement, MouseEvent>) => e.stopPropagation()}
                 />
-            </motion.div>
+            </MotionDiv>
         )}
       </AnimatePresence>
     </div>

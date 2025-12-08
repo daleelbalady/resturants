@@ -1,5 +1,5 @@
 
-import { MenuItem, Shop } from './types';
+import { MenuItem, Shop, Order, Table } from './types';
 
 export const TRANSLATIONS = {
   menu: { en: "Menu", ar: "القائمة" },
@@ -28,6 +28,80 @@ export const TRANSLATIONS = {
   items: { en: "Items", ar: "عناصر" },
   customizations: { en: "Customizations", ar: "إضافات وتعديلات" },
   from: { en: "From", ar: "يبدأ من" },
+  
+  // Checkout Wizard
+  selectMethod: { en: "How would you like your order?", ar: "كيف تفضل استلام طلبك؟" },
+  dineIn: { en: "Dine In", ar: "تناول في المطعم" },
+  delivery: { en: "Delivery", ar: "توصيل للمنزل" },
+  selectTable: { en: "Select a Table", ar: "اختر طاولة" },
+  capacity: { en: "Seats", ar: "كراسي" },
+  occupied: { en: "Occupied", ar: "مشغول" },
+  available: { en: "Available", ar: "متاح" },
+  guestCount: { en: "Number of Guests", ar: "عدد الضيوف" },
+  deliveryInfo: { en: "Delivery Details", ar: "تفاصيل التوصيل" },
+  pinLocation: { en: "Pin Location on Map", ar: "حدد موقعك على الخريطة" },
+  dragPin: { en: "Drag or click to set delivery point", ar: "اسحب الدبوس لتحديد نقطة التوصيل" },
+  contactInfo: { en: "Contact Info", ar: "بيانات التواصل" },
+  fullName: { en: "Full Name", ar: "الاسم بالكامل" },
+  phoneNumber: { en: "Phone Number", ar: "رقم الهاتف" },
+  addressDetails: { en: "Address Details (Building, Floor, Apt)", ar: "العنوان بالتفصيل (مبنى، دور، شقة)" },
+  deliveryProvider: { en: "Delivery Method", ar: "طريقة التوصيل" },
+  restDelivery: { en: "Restaurant Delivery", ar: "توصيل المطعم" },
+  daleelDelivery: { en: "Daleel Balady Delivery", ar: "توصيل دليل بلدي" },
+  reviewOrder: { en: "Review Order", ar: "مراجعة الطلب" },
+  placeOrder: { en: "Place Order", ar: "إرسال الطلب" },
+  back: { en: "Back", ar: "رجوع" },
+  next: { en: "Next", ar: "التالي" },
+  
+  // Dashboard General
+  dashboard: { en: "Dashboard", ar: "لوحة التحكم" },
+  providerDashboard: { en: "Provider Dashboard", ar: "لوحة التاجر" },
+  overview: { en: "Overview", ar: "نظرة عامة" },
+  orders: { en: "Orders", ar: "الطلبات" },
+  menuBuilder: { en: "Menu Builder", ar: "بناء القائمة" },
+  apiDocs: { en: "API & Schema", ar: "الربط البرمجي" },
+  settings: { en: "Settings", ar: "الإعدادات" },
+  tables: { en: "Table Management", ar: "إدارة الطاولات" },
+  addTable: { en: "Add Table", ar: "إضافة طاولة" },
+  
+  // Stats
+  revenue: { en: "Total Revenue", ar: "إجمالي الإيرادات" },
+  activeOrders: { en: "Active Orders", ar: "الطلبات النشطة" },
+  totalOrders: { en: "Total Orders", ar: "كل الطلبات" },
+  recentActivity: { en: "Recent Activity", ar: "النشاط الأخير" },
+  
+  // Orders
+  orderId: { en: "Order #", ar: "طلب رقم " },
+  table: { en: "Table", ar: "طاولة" },
+  takeaway: { en: "Takeaway", ar: "تيك أواي" },
+  cancelOrder: { en: "Cancel", ar: "إلغاء" },
+  advanceStatus: { en: "Advance Status", ar: "تغيير الحالة" },
+  
+  // Product Form
+  newProduct: { en: "New Product", ar: "منتج جديد" },
+  editProduct: { en: "Edit Product", ar: "تعديل منتج" },
+  addProduct: { en: "Add Product", ar: "إضافة منتج" },
+  saveProduct: { en: "Save Product", ar: "حفظ المنتج" },
+  cancel: { en: "Cancel", ar: "إلغاء" },
+  productNameEn: { en: "Name (EN)", ar: "الاسم (EN)" },
+  productNameAr: { en: "Name (AR)", ar: "الاسم (AR)" },
+  imageURL: { en: "Image URL", ar: "رابط الصورة" },
+  price: { en: "Price (EGP)", ar: "السعر (ج.م)" },
+  category: { en: "Category", ar: "القسم" },
+  
+  // Modifiers
+  modifiersAddons: { en: "Modifiers & Add-ons", ar: "الإضافات والخيارات" },
+  addGroup: { en: "Add Group", ar: "إضافة مجموعة" },
+  groupNamePlaceholder: { en: "Group Name (e.g. Size)", ar: "اسم المجموعة (مثال: الحجم)" },
+  min: { en: "Min", ar: "أدنى" },
+  addOption: { en: "Add Option", ar: "إضافة خيار" },
+  optionNameEn: { en: "Option (EN)", ar: "الخيار (EN)" },
+  
+  // Docs
+  devApi: { en: "Developer API & Schema", ar: "واجهة المطورين وقاعدة البيانات" },
+  devDesc: { en: "Use the following specifications to build the backend for this dashboard.", ar: "استخدم المواصفات التالية لبناء النظام الخلفي للوحة التحكم." },
+  routes: { en: "REST API Routes", ar: "مسارات API" },
+  schema: { en: "Database Schema (Recommended)", ar: "مخطط قاعدة البيانات (مقترح)" },
 };
 
 export const MOCK_SHOP: Shop = {
@@ -52,8 +126,17 @@ export const MOCK_SHOP: Shop = {
   currency: { en: "EGP", ar: "ج.م" }
 };
 
+export const MOCK_TABLES: Table[] = [
+    { id: 't1', label: 'T-1', capacity: 2, isOccupied: false },
+    { id: 't2', label: 'T-2', capacity: 2, isOccupied: true },
+    { id: 't3', label: 'T-3', capacity: 4, isOccupied: false },
+    { id: 't4', label: 'T-4', capacity: 4, isOccupied: false },
+    { id: 't5', label: 'Family-1', capacity: 6, isOccupied: false },
+    { id: 't6', label: 'VIP-1', capacity: 8, isOccupied: true },
+];
+
 export const MOCK_MENU: MenuItem[] = [
-  // --- RESTAURANT STYLE ITEM ---
+  // ... (Existing items remain same, just ensuring file structure)
   {
     id: "m1",
     name: { en: "Ribeye Steak", ar: "ستيك ريب آي" },
@@ -111,7 +194,6 @@ export const MOCK_MENU: MenuItem[] = [
       }
     ]
   },
-  // --- CAFE STYLE ITEM ---
   {
     id: "m2",
     name: { en: "Artisan Latte", ar: "لاتيه محضر يدوياً" },
@@ -157,7 +239,6 @@ export const MOCK_MENU: MenuItem[] = [
       }
     ]
   },
-  // --- SIMPLE ITEM ---
   {
     id: "m3",
     name: { en: "Caesar Salad", ar: "سلطة سيزر" },
@@ -201,4 +282,66 @@ export const MOCK_MENU: MenuItem[] = [
         }
     ]
   }
+];
+
+export const MOCK_ORDERS: Order[] = [
+    {
+        id: "ORD-1024",
+        customerName: "Ahmed Ali",
+        customerPhone: "0100000001",
+        method: "dine_in",
+        tableId: "t1",
+        guests: 2,
+        items: [
+            {
+                cartId: "c1",
+                menuItem: MOCK_MENU[0],
+                quantity: 1,
+                selectedModifiers: {"g_weight": ["opt_300g"], "g_doneness": ["opt_med"], "g_sides": ["side_fries", "side_veg"]},
+                totalPrice: 650
+            }
+        ],
+        totalAmount: 650,
+        status: "pending",
+        createdAt: "2024-05-10T14:30:00"
+    },
+    {
+        id: "ORD-1023",
+        customerName: "Sarah Smith",
+        customerPhone: "0100000002",
+        method: "delivery",
+        deliveryProvider: "restaurant",
+        deliveryAddress: "123 Nile St, Zamalek, Apt 4",
+        deliveryLocation: { lat: 30.0444, lng: 31.2357 },
+        items: [
+            {
+                cartId: "c2",
+                menuItem: MOCK_MENU[1],
+                quantity: 2,
+                selectedModifiers: {"g_milk": ["milk_oat"], "g_size": ["sz_lrg"]},
+                totalPrice: 280
+            }
+        ],
+        totalAmount: 280,
+        status: "preparing",
+        createdAt: "2024-05-10T14:25:00"
+    },
+    {
+        id: "ORD-1022",
+        customerName: "Mike Johnson",
+        customerPhone: "0100000003",
+        method: "dine_in",
+        items: [
+             {
+                cartId: "c3",
+                menuItem: MOCK_MENU[3],
+                quantity: 1,
+                selectedModifiers: {"g_topping": ["top_berry"]},
+                totalPrice: 120
+            }
+        ],
+        totalAmount: 120,
+        status: "ready",
+        createdAt: "2024-05-10T14:15:00"
+    }
 ];

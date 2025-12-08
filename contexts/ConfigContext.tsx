@@ -1,12 +1,14 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppContextType, Language, Theme } from '../types';
-import { TRANSLATIONS } from '../constants';
+import { AppContextType, Language, Theme, Table } from '../types';
+import { TRANSLATIONS, MOCK_TABLES } from '../constants';
 
 const ConfigContext = createContext<AppContextType | undefined>(undefined);
 
 export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('en');
   const [theme, setTheme] = useState<Theme>('dark');
+  const [tables, setTables] = useState<Table[]>(MOCK_TABLES);
 
   useEffect(() => {
     // Apply theme class to html element
@@ -34,13 +36,29 @@ export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, [language]);
 
+  const addTable = (table: Table) => {
+    setTables(prev => [...prev, table]);
+  };
+
+  const removeTable = (id: string) => {
+    setTables(prev => prev.filter(t => t.id !== id));
+  };
+
+  const updateTableStatus = (id: string, isOccupied: boolean) => {
+    setTables(prev => prev.map(t => t.id === id ? { ...t, isOccupied } : t));
+  };
+
   return (
     <ConfigContext.Provider value={{
       language,
       setLanguage,
       theme,
       setTheme,
-      translations: TRANSLATIONS
+      translations: TRANSLATIONS,
+      tables,
+      addTable,
+      removeTable,
+      updateTableStatus
     }}>
       {children}
     </ConfigContext.Provider>

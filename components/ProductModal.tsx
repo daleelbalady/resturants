@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, ShoppingBag, AlertCircle } from 'lucide-react';
@@ -10,6 +9,8 @@ interface ProductModalProps {
   product: MenuItem | null;
   onClose: () => void;
 }
+
+const MotionDiv = motion.div as any;
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
   const { translations, language } = useConfig();
@@ -108,7 +109,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     <AnimatePresence>
       {product && (
         <>
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -116,7 +117,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
           />
 
-          <motion.div
+          <MotionDiv
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -226,14 +227,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             {/* Sticky Footer */}
             <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 p-4 pb-8 sm:pb-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
                 {validationError && (
-                    <motion.div 
+                    <MotionDiv 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="flex items-center gap-2 text-red-500 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg mb-4 text-sm font-medium"
                     >
                         <AlertCircle className="w-4 h-4" />
                         {validationError}
-                    </motion.div>
+                    </MotionDiv>
                 )}
                 
                 <div className="flex items-center gap-4">
@@ -264,7 +265,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     </button>
                 </div>
             </div>
-          </motion.div>
+          </MotionDiv>
         </>
       )}
     </AnimatePresence>

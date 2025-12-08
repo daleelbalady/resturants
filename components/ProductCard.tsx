@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, Plus } from 'lucide-react';
@@ -10,12 +9,18 @@ interface ProductCardProps {
   onSelect: (product: MenuItem) => void;
 }
 
+const MotionDiv = motion.div as any;
+const MotionImg = motion.img as any;
+const MotionH3 = motion.h3 as any;
+const MotionP = motion.p as any;
+const MotionButton = motion.button as any;
+
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) => {
   const { translations, language } = useConfig();
   const t = translations;
 
   return (
-    <motion.div
+    <MotionDiv
       layoutId={`card-container-${product.id}`}
       onClick={() => onSelect(product)}
       initial={{ opacity: 0, y: 20 }}
@@ -25,11 +30,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
       className="group cursor-pointer relative bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-zinc-800"
     >
       {/* Image Container */}
-      <motion.div 
+      <MotionDiv 
         layoutId={`image-container-${product.id}`}
         className="relative h-56 w-full overflow-hidden"
       >
-        <motion.img
+        <MotionImg
           layoutId={`image-${product.id}`}
           src={product.image}
           alt={product.name[language]}
@@ -41,31 +46,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
             </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-      </motion.div>
+      </MotionDiv>
 
       {/* Content */}
-      <motion.div 
+      <MotionDiv 
         layoutId={`content-container-${product.id}`}
         className="p-5"
       >
         <div className="flex justify-between items-start mb-1">
-            <motion.h3 
+            <MotionH3 
                 layoutId={`title-${product.id}`}
                 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1"
             >
                 {product.name[language]}
-            </motion.h3>
+            </MotionH3>
         </div>
         
-        <motion.p 
+        <MotionP 
             layoutId={`description-${product.id}`}
             className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4 h-10 leading-relaxed"
         >
             {product.description[language]}
-        </motion.p>
+        </MotionP>
 
         <div className="flex items-center justify-between mt-auto">
-            <motion.div 
+            <MotionDiv 
                 layoutId={`price-${product.id}`}
                 className="flex flex-col"
             >   
@@ -74,16 +79,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
                     <span className="text-xl font-bold text-gold-600 dark:text-gold-500">{product.basePrice}</span>
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t.currency[language]}</span>
                 </div>
-            </motion.div>
+            </MotionDiv>
 
-            <motion.button
+            <MotionButton
                 whileTap={{ scale: 0.9 }}
                 className="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white p-2.5 rounded-full shadow-sm transition-colors"
             >
                 <Plus className="w-5 h-5" />
-            </motion.button>
+            </MotionButton>
         </div>
-      </motion.div>
-    </motion.div>
+      </MotionDiv>
+    </MotionDiv>
   );
 };

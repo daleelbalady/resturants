@@ -60,12 +60,17 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }));
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   return (
     <CartContext.Provider value={{
       cart,
       addToCart,
       removeFromCart,
       updateQuantity,
+      clearCart,
       cartTotal,
       itemCount,
       isCartOpen,

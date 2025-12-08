@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, ShoppingBag } from 'lucide-react';
@@ -9,8 +8,12 @@ import { ProductCard } from './components/ProductCard';
 import { ProductModal } from './components/ProductModal';
 import { ShopHeader } from './components/ShopHeader';
 import { CartDrawer } from './components/CartDrawer';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MOCK_MENU, MOCK_SHOP } from './constants';
 import { MenuItem } from './types';
+
+const MotionButton = motion.button as any;
+const MotionDiv = motion.div as any;
 
 // Floating Cart Button Component
 const FloatingCartButton = () => {
@@ -19,7 +22,7 @@ const FloatingCartButton = () => {
   return (
     <AnimatePresence>
       {itemCount > 0 && (
-        <motion.button
+        <MotionButton
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           exit={{ scale: 0 }}
@@ -30,14 +33,14 @@ const FloatingCartButton = () => {
           <span className="absolute -top-1 -right-1 bg-gold-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
             {itemCount}
           </span>
-        </motion.button>
+        </MotionButton>
       )}
     </AnimatePresence>
   );
 };
 
 // Inner component to access context
-const MenuApp: React.FC = () => {
+const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void }> = ({ setView }) => {
   const { translations, language } = useConfig();
   const t = translations;
   
@@ -66,13 +69,13 @@ const MenuApp: React.FC = () => {
   }, [searchQuery, activeCategory]);
 
   return (
-    <Layout>
+    <Layout onDashboardClick={() => setView('admin')} showDashboardLink={true}>
       {/* Shop Profile Header */}
       <ShopHeader shop={MOCK_SHOP} />
 
       {/* Search Bar (Floating) */}
       <div className="max-w-xl mx-auto px-4 -mt-16 relative z-20 mb-10">
-        <motion.div 
+        <MotionDiv 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
@@ -88,7 +91,7 @@ const MenuApp: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="block w-full pl-12 pr-6 py-4 rounded-full border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-all"
             />
-        </motion.div>
+        </MotionDiv>
       </div>
 
       {/* Category Filter */}
@@ -128,7 +131,7 @@ const MenuApp: React.FC = () => {
         </div>
         
         {filteredProducts.length === 0 && (
-            <motion.div 
+            <MotionDiv 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }}
                 className="text-center py-20"
@@ -143,7 +146,7 @@ const MenuApp: React.FC = () => {
                 >
                     Clear Filters
                 </button>
-            </motion.div>
+            </MotionDiv>
         )}
       </div>
 
@@ -159,10 +162,22 @@ const MenuApp: React.FC = () => {
 };
 
 const App = () => {
+  const [view, setView] = useState<'customer' | 'admin'>('customer');
+
   return (
     <ConfigProvider>
       <CartProvider>
-        <MenuApp />
+        {view === 'customer' ? <MenuApp setView={setView} /> : <AdminDashboard />}
+        
+        {/* Helper to go back to customer view from admin (for demo purposes) */}
+        {view === 'admin' && (
+            <button 
+                onClick={() => setView('customer')}
+                className="fixed bottom-6 left-6 z-50 bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full font-bold shadow-xl"
+            >
+                ← Back to Menu
+            </button>
+        )}
       </CartProvider>
     </ConfigProvider>
   );

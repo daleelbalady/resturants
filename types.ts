@@ -9,16 +9,16 @@ export type ProductType = 'food' | 'beverage' | 'dessert' | 'other';
 export interface ModifierOption {
   id: string;
   name: LocalizedString;
-  priceDelta: number; // Extra cost (e.g., +50 for extra cheese)
+  priceDelta: number;
   isDefault?: boolean;
 }
 
 export interface ModifierGroup {
   id: string;
   name: LocalizedString;
-  description?: LocalizedString; // e.g. "Choose 1", "Optional"
-  minSelection: number; // 0 for optional, 1 for required
-  maxSelection: number; // 1 for radio, >1 for checkbox
+  description?: LocalizedString;
+  minSelection: number;
+  maxSelection: number;
   options: ModifierOption[];
 }
 
@@ -32,16 +32,55 @@ export interface MenuItem {
   type: ProductType;
   calories?: number;
   isPopular?: boolean;
-  modifierGroups: ModifierGroup[]; // The key to customization
+  modifierGroups: ModifierGroup[];
 }
 
 export interface CartItem {
-  cartId: string; // Unique ID for this specific instance in cart
+  cartId: string;
   menuItem: MenuItem;
   quantity: number;
-  selectedModifiers: Record<string, string[]>; // groupId -> array of optionIds
+  selectedModifiers: Record<string, string[]>;
   totalPrice: number;
   notes?: string;
+}
+
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+export type OrderMethod = 'dine_in' | 'delivery';
+export type DeliveryProvider = 'restaurant' | 'daleel_balady';
+
+export interface Table {
+  id: string;
+  label: string; // e.g., "T-1" or "Family Booth"
+  capacity: number;
+  isOccupied: boolean;
+}
+
+export interface Location {
+  lat: number;
+  lng: number;
+}
+
+export interface Order {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  
+  // Logic Flow
+  method: OrderMethod;
+  
+  // If Dine In
+  tableId?: string;
+  guests?: number;
+  
+  // If Delivery
+  deliveryProvider?: DeliveryProvider;
+  deliveryAddress?: string;
+  deliveryLocation?: Location; // Coordinates from map
+  
+  items: CartItem[];
+  totalAmount: number;
+  status: OrderStatus;
+  createdAt: string;
 }
 
 export interface Shop {
@@ -71,6 +110,11 @@ export interface AppContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   translations: Record<string, Record<Language, string>>;
+  // Mock Backend State for Tables
+  tables: Table[];
+  addTable: (table: Table) => void;
+  removeTable: (id: string) => void;
+  updateTableStatus: (id: string, isOccupied: boolean) => void;
 }
 
 export interface CartContextType {
@@ -78,6 +122,7 @@ export interface CartContextType {
   addToCart: (item: MenuItem, quantity: number, modifiers: Record<string, string[]>, notes: string) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, delta: number) => void;
+  clearCart: () => void;
   cartTotal: number;
   itemCount: number;
   isCartOpen: boolean;
