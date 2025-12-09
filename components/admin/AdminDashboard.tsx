@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { QRCodeCanvas } from 'qrcode.react';
+import { API_ENDPOINTS, api } from '../../api';
 import {
     LayoutDashboard,
     UtensilsCrossed,
@@ -21,9 +23,12 @@ import {
     ChevronUp,
     Save,
     MapPin,
-    Truck
+    Truck,
+    Upload,
+    Image as ImageIcon
 } from 'lucide-react';
 import { useConfig } from '../../contexts/ConfigContext';
+import { useProvider } from '../../contexts/ProviderContext';
 import { Layout } from '../Layout';
 import { MOCK_MENU, MOCK_ORDERS } from '../../constants';
 import { MenuItem, Order, OrderStatus, ModifierGroup, Table } from '../../types';
@@ -66,16 +71,18 @@ const OrderBadge = ({ status }: { status: OrderStatus }) => {
 };
 
 // --- MENU FORM COMPONENT (Complex) ---
-const MenuForm = ({ initialData, onSave, onCancel }: { initialData?: MenuItem, onSave: (data: MenuItem) => void, onCancel: () => void }) => {
+const MenuForm = ({ initialData, onSave, onCancel, existingCategories = [] }: { initialData?: MenuItem, onSave: (data: MenuItem) => void, onCancel: () => void, existingCategories?: string[] }) => {
     const { translations, language } = useConfig();
     const t = translations;
+    const [uploading, setUploading] = useState(false);
 
     const [formData, setFormData] = useState<Partial<MenuItem>>(initialData || {
         name: { en: '', ar: '' },
         description: { en: '', ar: '' },
         basePrice: 0,
         category: '',
-        modifierGroups: []
+        modifierGroups: [],
+        image: ''
     });
 
     const addModifierGroup = () => {
@@ -104,6 +111,25 @@ const MenuForm = ({ initialData, onSave, onCancel }: { initialData?: MenuItem, o
         }));
     };
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setUploading(true);
+            const token = localStorage.getItem('daleel-token');
+            const result = await api.upload(API_ENDPOINTS.uploadImage(), file, token || undefined);
+            if (result.success) {
+                setFormData(prev => ({ ...prev, image: result.data.url }));
+            }
+        } catch (error) {
+            console.error('Upload failed', error);
+            alert('Upload failed');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     return (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-800 overflow-hidden">
             <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center bg-gray-50 dark:bg-zinc-800/50">
@@ -126,12 +152,33 @@ const MenuForm = ({ initialData, onSave, onCancel }: { initialData?: MenuItem, o
                             value={formData.name?.ar}
                             onChange={e => setFormData({ ...formData, name: { ...formData.name!, ar: e.target.value } })} />
                     </div>
+
                     <div className="col-span-2 space-y-2">
                         <label className="text-xs font-bold uppercase text-gray-500">{t.imageURL[language]}</label>
-                        <input className="w-full p-2 rounded bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700"
-                            value={formData.image}
-                            onChange={e => setFormData({ ...formData, image: e.target.value })} />
+                        <div className="flex gap-4 items-start">
+                            {formData.image && (
+                                <img src={formData.image} alt="Preview" className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-zinc-700" />
+                            )}
+                            <div className="flex-1">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        className="flex-1 p-2 rounded bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700"
+                                        value={formData.image}
+                                        onChange={e => setFormData({ ...formData, image: e.target.value })}
+                                        placeholder="https://..."
+                                    />
+                                    <label className="cursor-pointer bg-gray-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
+                                        {uploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div> : <Upload className="w-4 h-4" />}
+                                        <span className="hidden sm:inline">Upload</span>
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                    </label>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">Upload an image or paste a URL</p>
+                            </div>
+                        </div>
                     </div>
+
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase text-gray-500">{t.price[language]}</label>
                         <input type="number" className="w-full p-2 rounded bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700"
@@ -140,9 +187,15 @@ const MenuForm = ({ initialData, onSave, onCancel }: { initialData?: MenuItem, o
                     </div>
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase text-gray-500">{t.category[language]}</label>
-                        <input className="w-full p-2 rounded bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700"
+                        <input
+                            list="categories"
+                            className="w-full p-2 rounded bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700"
                             value={formData.category}
-                            onChange={e => setFormData({ ...formData, category: e.target.value })} />
+                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                        />
+                        <datalist id="categories">
+                            {existingCategories.map(cat => <option key={cat} value={cat} />)}
+                        </datalist>
                     </div>
                 </div>
 
@@ -400,30 +453,111 @@ const SettingsTab = () => {
 
 // --- MAIN DASHBOARD LAYOUT ---
 
-import { useOrders, useMenuManagement, useMenu } from '../../hooks/useApi';
+import { useOrders, useMenuManagement, useMenu, useTables } from '../../hooks/useApi';
+import { ShopManagementTab } from './ShopManagementTab';
 
 export const AdminDashboard = () => {
-    const { translations, language, tables } = useConfig();
+    const { translations, language } = useConfig();
+    const { userId, token, isAuthenticated, user } = useProvider();
     const t = translations;
-    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'settings' | 'docs'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'shop' | 'settings' | 'docs'>('overview');
 
-    // Get token
-    const token = localStorage.getItem('authToken') || '';
-
-    // API Hooks
+    // API Hooks - use userId from context
     const { orders, loading: ordersLoading, fetchOrders, updateOrderStatus } = useOrders();
-    const { menuItems, loading: menuLoading, refetch: refetchMenu } = useMenu(); // Fetch menu (public read)
+    const { menuItems, loading: menuLoading, refetch: refetchMenu } = useMenu(userId || undefined);
+    const { tables, loading: tablesLoading, refetch: refetchTables } = useTables(userId || '');
     const { createMenuItem, updateMenuItem, deleteMenuItem } = useMenuManagement();
 
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
     const [isCreating, setIsCreating] = useState(false);
 
+    // Order Filters
+    const [filterStatus, setFilterStatus] = useState<'all' | OrderStatus>('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [dateFilter, setDateFilter] = useState('');
+
     // Fetch orders on mount
     React.useEffect(() => {
-        if (token) {
+        if (token && isAuthenticated) {
             fetchOrders(token);
         }
-    }, [token]);
+    }, [token, isAuthenticated]);
+
+    // Show loading or unauthorized state
+    if (!isAuthenticated) {
+        const debugInfo = {
+            hasToken: !!token,
+            hasUser: !!user,
+            userId: userId,
+            userIdFromUser: user?.id,
+        };
+
+        const correctUrl = user?.id ? `/provider/${user.id}` : null;
+        const isWrongUrl = userId && user?.id && userId !== user.id;
+
+        return (
+            <Layout isAdmin={true}>
+                <div className="flex items-center justify-center h-screen p-4">
+                    <div className="text-center max-w-lg">
+                        <h2 className="text-2xl font-bold mb-4">Please Log In</h2>
+
+                        {!token && (
+                            <>
+                                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                                    Authentication token is missing. Please log in using the button in the navbar.
+                                </p>
+
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                                    <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                                        💡 Tip: Use the "Login" dropdown in the navbar above to sign in.
+                                    </p>
+                                </div>
+                            </>
+                        )}
+
+                        {token && isWrongUrl && correctUrl && (
+                            <>
+                                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                                    You're logged in, but accessing the wrong provider dashboard.
+                                </p>
+
+                                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
+                                    <p className="text-sm text-orange-800 dark:text-orange-200 font-medium mb-2">
+                                        ⚠️ URL Mismatch
+                                    </p>
+                                    <p className="text-xs text-orange-700 dark:text-orange-300">
+                                        Please use your correct provider URL:
+                                    </p>
+                                    <a
+                                        href={correctUrl}
+                                        className="block mt-2 p-2 bg-orange-100 dark:bg-orange-900 rounded text-orange-900 dark:text-orange-100 font-mono text-xs break-all hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors"
+                                    >
+                                        {window.location.origin}{correctUrl}
+                                    </a>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Debug Info */}
+                        <details className="mt-6">
+                            <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                                Show Debug Info
+                            </summary>
+                            <div className="mt-2 p-4 bg-gray-100 dark:bg-zinc-800 rounded-lg text-left text-xs">
+                                <p className="font-bold mb-2">Debug Info:</p>
+                                <pre className="text-gray-700 dark:text-gray-300 overflow-x-auto">
+                                    {JSON.stringify(debugInfo, null, 2)}
+                                </pre>
+                                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                                    Check browser console for more details
+                                </p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
 
     const stats = {
         revenue: orders.reduce((acc, curr) => acc + curr.totalAmount, 0),
@@ -431,12 +565,18 @@ export const AdminDashboard = () => {
         totalOrders: orders.length
     };
 
+    // ... (imports)
+
+    // ...
+
     const navItems = [
         { id: 'overview', icon: LayoutDashboard, label: t.overview[language] },
         { id: 'orders', icon: ClipboardList, label: t.orders[language] },
         { id: 'menu', icon: UtensilsCrossed, label: t.menuBuilder[language] },
-        { id: 'docs', icon: Code, label: t.apiDocs[language] },
+        { id: 'tables', icon: Users, label: t.tables[language] },
+        { id: 'shop', icon: ShoppingBag, label: 'Shop Profile' },
         { id: 'settings', icon: Settings, label: t.settings[language] },
+        { id: 'docs', icon: Code, label: t.apiDocs[language] },
     ];
 
     const handleSaveProduct = async (product: MenuItem) => {
@@ -467,6 +607,28 @@ export const AdminDashboard = () => {
         } catch (error) {
             console.error("Failed to delete product", error);
             alert("Failed to delete product");
+        }
+    };
+
+    const handleCreateTable = async (data: { label: string, capacity: number }) => {
+        if (!token) return;
+        try {
+            await api.post(API_ENDPOINTS.createTable(), { ...data, shopId: user?.id || '' }, token);
+            refetchTables();
+        } catch (error) {
+            console.error("Failed to create table", error);
+            alert("Failed to create table");
+        }
+    };
+
+    const handleDeleteTable = async (id: string) => {
+        if (!token || !window.confirm("Are you sure?")) return;
+        try {
+            await api.delete(API_ENDPOINTS.deleteTable(id), token);
+            refetchTables();
+        } catch (error) {
+            console.error("Failed to delete table", error);
+            alert("Failed to delete table");
         }
     };
 
@@ -549,26 +711,61 @@ export const AdminDashboard = () => {
                                 <StatCard title={t.totalOrders[language]} value={stats.totalOrders} icon={ShoppingBag} color="bg-blue-500" />
                             </div>
 
-                            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800">
-                                <h3 className="font-bold text-lg mb-4">{t.recentActivity[language]}</h3>
-                                <div className="space-y-4">
-                                    {ordersLoading ? <p>Loading...</p> : orders.slice(0, 3).map(order => (
-                                        <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-xl">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-700 flex items-center justify-center font-bold text-gray-500">
-                                                    {order.method === 'dine_in' ? 'TB' : 'DL'}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800">
+                                    <h3 className="font-bold text-lg mb-4">{t.recentActivity[language]}</h3>
+                                    <div className="space-y-4">
+                                        {ordersLoading ? <p>Loading...</p> : orders.slice(0, 3).map(order => (
+                                            <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-xl">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-700 flex items-center justify-center font-bold text-gray-500">
+                                                        {order.method === 'dine_in' ? 'TB' : 'DL'}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-900 dark:text-white">{t.orderId[language]}{order.id.split('-')[1] || order.id.slice(0, 4)}</p>
+                                                        <p className="text-sm text-gray-500">{order.customerName} • {order.items.length} {t.items[language]}</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-900 dark:text-white">{t.orderId[language]}{order.id.split('-')[1] || order.id.slice(0, 4)}</p>
-                                                    <p className="text-sm text-gray-500">{order.customerName} • {order.items.length} {t.items[language]}</p>
+                                                <div className="text-right">
+                                                    <p className="font-bold">{order.totalAmount} {t.currency[language]}</p>
+                                                    <OrderBadge status={order.status} />
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="font-bold">{order.totalAmount} {t.currency[language]}</p>
-                                                <OrderBadge status={order.status} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800">
+                                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-gold-500" /> Popular Items</h3>
+                                    <div className="space-y-4">
+                                        {React.useMemo(() => {
+                                            const itemCounts: Record<string, number> = {};
+                                            orders.forEach(order => {
+                                                order.items.forEach(item => {
+                                                    itemCounts[item.menuItem.id] = (itemCounts[item.menuItem.id] || 0) + item.quantity;
+                                                });
+                                            });
+                                            return Object.entries(itemCounts)
+                                                .sort(([, a], [, b]) => b - a)
+                                                .slice(0, 5)
+                                                .map(([id, count]) => {
+                                                    const menuItem = menuItems.find(m => m.id === id);
+                                                    return menuItem ? { ...menuItem, count } : null;
+                                                })
+                                                .filter(Boolean);
+                                        }, [orders, menuItems]).map((item: any) => (
+                                            <div key={item.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={item.image} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                                                    <div>
+                                                        <p className="font-bold text-sm text-gray-900 dark:text-white">{item.name[language]}</p>
+                                                        <p className="text-xs text-gray-500">{item.count} orders</p>
+                                                    </div>
+                                                </div>
+                                                <span className="font-bold text-sm">{item.basePrice} {t.currency[language]}</span>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -576,67 +773,130 @@ export const AdminDashboard = () => {
 
                     {/* --- ORDERS TAB --- */}
                     {activeTab === 'orders' && (
-                        <div className="grid grid-cols-1 gap-6">
-                            {ordersLoading ? <p>Loading orders...</p> : orders.map(order => (
-                                <MotionDiv
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    key={order.id}
-                                    className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-6 justify-between"
-                                >
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">#{order.id.split('-')[1] || order.id.slice(0, 4)}</h3>
-                                            <OrderBadge status={order.status} />
-                                            <span className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleTimeString()}</span>
-                                        </div>
-                                        <div className="flex items-start gap-4 mb-4">
-                                            <div className="p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-                                                {order.method === 'dine_in' ? <Users className="w-5 h-5 text-blue-500" /> : <Truck className="w-5 h-5 text-orange-500" />}
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-900 dark:text-white font-bold">{order.customerName}</p>
-                                                <p className="text-sm text-gray-500">{order.customerPhone}</p>
-                                                {order.method === 'dine_in' ? (
-                                                    <p className="text-sm text-blue-500 mt-1 font-medium">
-                                                        {t.table[language]}: {getTableLabel(order.tableId || '')} • {order.guests} {t.guestCount[language]}
-                                                    </p>
-                                                ) : (
-                                                    <div className="text-sm text-orange-500 mt-1">
-                                                        <p className="font-medium">{order.deliveryProvider === 'restaurant' ? t.restDelivery[language] : t.daleelDelivery[language]}</p>
-                                                        <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{order.deliveryAddress}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                        <div className="space-y-6">
+                            {/* Filters & Search */}
+                            <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800 flex flex-col md:flex-row gap-4 justify-between items-center">
+                                <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+                                    {['all', 'pending', 'preparing', 'ready', 'delivered', 'cancelled'].map(status => (
+                                        <button
+                                            key={status}
+                                            onClick={() => setFilterStatus(status as any)}
+                                            className={`px-4 py-2 rounded-xl text-sm font-bold capitalize whitespace-nowrap transition-colors ${filterStatus === status
+                                                ? 'bg-gray-900 dark:bg-white text-white dark:text-black'
+                                                : 'bg-gray-50 dark:bg-zinc-800 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-700'
+                                                }`}
+                                        >
+                                            {status}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2 w-full md:w-auto">
+                                    <input
+                                        type="text"
+                                        placeholder="Search orders..."
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        className="flex-1 md:w-64 p-2 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700"
+                                    />
+                                    <input
+                                        type="date"
+                                        value={dateFilter}
+                                        onChange={e => setDateFilter(e.target.value)}
+                                        className="p-2 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700"
+                                    />
+                                </div>
+                            </div>
 
-                                        <div className="space-y-2 pl-4 border-l-2 border-gray-100 dark:border-zinc-800">
-                                            {order.items.map((item, idx) => (
-                                                <div key={idx} className="flex items-center gap-2 text-sm">
-                                                    <span className="font-bold w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 rounded text-xs">{item.quantity}x</span>
-                                                    <span>{item.menuItem.name[language]}</span>
+                            <div className="grid grid-cols-1 gap-6">
+                                {ordersLoading ? <p>Loading orders...</p> : orders
+                                    .filter(order => {
+                                        const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
+                                        const matchesSearch = order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                            order.id.toLowerCase().includes(searchQuery.toLowerCase());
+                                        const matchesDate = !dateFilter || new Date(order.createdAt).toISOString().startsWith(dateFilter);
+                                        return matchesStatus && matchesSearch && matchesDate;
+                                    })
+                                    .map(order => (
+                                        <MotionDiv
+                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                            key={order.id}
+                                            className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-6 justify-between"
+                                        >
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">#{order.id.split('-')[1] || order.id.slice(0, 4)}</h3>
+                                                    <OrderBadge status={order.status} />
+                                                    <span className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleTimeString()}</span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col justify-between items-end min-w-[200px]">
-                                        <p className="text-2xl font-black text-gray-900 dark:text-white">{order.totalAmount} {t.currency[language]}</p>
-                                        <div className="flex gap-2 mt-4">
-                                            <button
-                                                onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
-                                                className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 rounded-lg font-bold text-xs hover:bg-gray-200 dark:hover:bg-zinc-700"
-                                            >
-                                                {t.cancelOrder[language]}
-                                            </button>
-                                            <button
-                                                onClick={() => handleUpdateOrderStatus(order.id, 'preparing')} // Simple advance logic for now
-                                                className="px-4 py-2 bg-gold-500 text-white rounded-lg font-bold text-xs hover:bg-gold-600"
-                                            >
-                                                {t.advanceStatus[language]}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </MotionDiv>
-                            ))}
+                                                <div className="flex items-start gap-4 mb-4">
+                                                    <div className="p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+                                                        {order.method === 'dine_in' ? <Users className="w-5 h-5 text-blue-500" /> : <Truck className="w-5 h-5 text-orange-500" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-gray-900 dark:text-white font-bold">{order.customerName}</p>
+                                                        <p className="text-sm text-gray-500">{order.customerPhone}</p>
+                                                        {order.method === 'dine_in' ? (
+                                                            <p className="text-sm text-blue-500 mt-1 font-medium">
+                                                                {t.table[language]}: {getTableLabel(order.tableId || '')} • {order.guests} {t.guestCount[language]}
+                                                            </p>
+                                                        ) : (
+                                                            <div className="text-sm text-orange-500 mt-1">
+                                                                <p className="font-medium">{order.deliveryProvider === 'restaurant' ? t.restDelivery[language] : t.daleelDelivery[language]}</p>
+                                                                <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{order.deliveryAddress}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2 pl-4 border-l-2 border-gray-100 dark:border-zinc-800">
+                                                    {order.items.map((item, idx) => (
+                                                        <div key={idx} className="flex items-center gap-2 text-sm">
+                                                            <span className="font-bold w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 rounded text-xs">{item.quantity}x</span>
+                                                            <span>{item.menuItem.name[language]}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col justify-between items-end min-w-[200px]">
+                                                <p className="text-2xl font-black text-gray-900 dark:text-white">{order.totalAmount} {t.currency[language]}</p>
+                                                <div className="flex gap-2 mt-4">
+                                                    {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                                                        <button
+                                                            onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
+                                                            className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 rounded-lg font-bold text-xs hover:bg-gray-200 dark:hover:bg-zinc-700"
+                                                        >
+                                                            {t.cancelOrder[language]}
+                                                        </button>
+                                                    )}
+                                                    {order.status === 'pending' && (
+                                                        <button
+                                                            onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
+                                                            className="px-4 py-2 bg-blue-500 text-white rounded-lg font-bold text-xs hover:bg-blue-600"
+                                                        >
+                                                            Accept
+                                                        </button>
+                                                    )}
+                                                    {order.status === 'preparing' && (
+                                                        <button
+                                                            onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
+                                                            className="px-4 py-2 bg-orange-500 text-white rounded-lg font-bold text-xs hover:bg-orange-600"
+                                                        >
+                                                            Ready
+                                                        </button>
+                                                    )}
+                                                    {order.status === 'ready' && (
+                                                        <button
+                                                            onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
+                                                            className="px-4 py-2 bg-green-500 text-white rounded-lg font-bold text-xs hover:bg-green-600"
+                                                        >
+                                                            Complete
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </MotionDiv>
+                                    ))}
+                            </div>
                         </div>
                     )}
 
@@ -679,10 +939,74 @@ export const AdminDashboard = () => {
                                     initialData={editingItem || undefined}
                                     onSave={handleSaveProduct}
                                     onCancel={() => { setIsCreating(false); setEditingItem(null); }}
+                                    existingCategories={Array.from(new Set(menuItems.map(i => i.category))).filter(Boolean) as string[]}
                                 />
                             )}
                         </div>
                     )}
+
+                    {/* --- TABLES TAB --- */}
+                    {activeTab === 'tables' && (
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-100 dark:border-zinc-800">
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t.tables[language]}</h3>
+                                    <p className="text-gray-500 text-sm">Manage your restaurant tables and QR codes</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const label = prompt("Enter table label (e.g., T-1):");
+                                        const capacity = prompt("Enter capacity:");
+                                        if (label && capacity) {
+                                            handleCreateTable({ label, capacity: parseInt(capacity) });
+                                        }
+                                    }}
+                                    className="bg-gray-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg"
+                                >
+                                    <Plus className="w-5 h-5" /> Add Table
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {tables.map(table => (
+                                    <div key={table.id} className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 flex flex-col items-center text-center relative group">
+                                        <button
+                                            onClick={() => handleDeleteTable(table.id)}
+                                            className="absolute top-2 right-2 p-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+
+                                        <div className="bg-white p-2 rounded-xl border border-gray-100 shadow-sm mb-4">
+                                            <QRCodeCanvas
+                                                value={`https://menu.daleelbalady.com/menu/${user?.id}?table=${table.id}`}
+                                                size={120}
+                                                level={"H"}
+                                            />
+                                        </div>
+
+                                        <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-1">{table.label}</h4>
+                                        <p className="text-sm text-gray-500 mb-4">{t.capacity[language]}: {table.capacity} {t.guestCount[language]}</p>
+
+                                        <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${table.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                            }`}>
+                                            {table.status}
+                                        </div>
+
+                                        <button
+                                            onClick={() => window.open(`https://menu.daleelbalady.com/menu/${user?.id}?table=${table.id}`, '_blank')}
+                                            className="mt-4 text-blue-500 text-xs font-bold hover:underline"
+                                        >
+                                            Test Link
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- SHOP MANAGEMENT TAB --- */}
+                    {activeTab === 'shop' && <ShopManagementTab />}
 
                     {/* --- SETTINGS TAB --- */}
                     {activeTab === 'settings' && <SettingsTab />}

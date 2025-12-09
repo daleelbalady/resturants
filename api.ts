@@ -6,13 +6,12 @@ export const API_ENDPOINTS = {
     // Shop endpoints (from main backend - Node.js)
     getShopDetails: (identifier: string) => `${MAIN_API_BASE_URL}/api/shops/public/details/${identifier}`,
 
-    // Legacy shop endpoints (Go backend - deprecated, keeping for reference)
-    getShop: (shopId: string) => `${MENU_API_BASE_URL}/api/shop/${shopId}`,
-    getMyShop: () => `${MENU_API_BASE_URL}/api/shop/my`,
-    updateShop: () => `${MENU_API_BASE_URL}/api/shop`,
+    // Shop endpoints (Go backend - for provider dashboard)
+    getShop: (shopId: string) => `${MENU_API_BASE_URL}/api/shop/my`,
+    updateShop: (shopId: string) => `${MENU_API_BASE_URL}/api/shop/${shopId}`,
 
-    // Menu endpoints (Go backend)
-    getMenu: (shopId: string) => `${MENU_API_BASE_URL}/api/menu/${shopId}`,
+    // Menu endpoints (Go backend) - FIXED: Use userId not shopId
+    getMenu: (userId: string) => `${MENU_API_BASE_URL}/api/menu/${userId}`,
     getMenuItem: (itemId: string) => `${MENU_API_BASE_URL}/api/menu/item/${itemId}`,
     createMenuItem: () => `${MENU_API_BASE_URL}/api/menu`,
     updateMenuItem: (itemId: string) => `${MENU_API_BASE_URL}/api/menu/${itemId}`,
@@ -33,6 +32,9 @@ export const API_ENDPOINTS = {
 
     // Health check
     health: () => `${MENU_API_BASE_URL}/health`,
+
+    // Upload endpoint (Node.js backend)
+    uploadImage: () => `${MAIN_API_BASE_URL}/api/upload/single`,
 };
 
 // API utility functions
@@ -118,6 +120,30 @@ export const api = {
 
         if (!response.ok) {
             throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        return response.json();
+    },
+
+    async upload(url: string, file: File, token?: string) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('uploadType', 'general');
+        formData.append('isPublic', 'true');
+
+        const headers: HeadersInit = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Upload Error: ${response.statusText}`);
         }
 
         return response.json();

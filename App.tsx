@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, ShoppingBag } from 'lucide-react';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { Search, Filter, ShoppingBag, UtensilsCrossed } from 'lucide-react';
 import { ConfigProvider, useConfig } from './contexts/ConfigContext';
 import { CartProvider, useCart } from './contexts/CartContext';
+import { ProviderProvider, useProvider } from './contexts/ProviderContext';
 import { Layout } from './components/Layout';
 import { ProductCard } from './components/ProductCard';
 import { ProductModal } from './components/ProductModal';
@@ -12,9 +14,21 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MOCK_SHOP } from './constants';
 import { MenuItem } from './types';
 import { useMenu, useShop } from './hooks/useApi';
+import Navbar from './components/navigation/Navbar';
+import AuthCallback from './components/AuthCallback';
 
 const MotionButton = motion.button as any;
 const MotionDiv = motion.div as any;
+
+// Wrapper component for provider dashboard that gets userId from context
+const ProviderDashboardWrapper = () => {
+  const { userId } = useProvider();
+  return (
+    <ConfigProvider shopId={userId || ''}>
+      <AdminDashboard />
+    </ConfigProvider>
+  );
+};
 
 // Floating Cart Button Component
 const FloatingCartButton = () => {
@@ -39,9 +53,6 @@ const FloatingCartButton = () => {
     </AnimatePresence>
   );
 };
-
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
-import AuthCallback from './components/AuthCallback';
 
 // Helper component to handle routing params and data fetching
 const MenuAppWrapper = () => {
@@ -87,7 +98,6 @@ const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId: st
   const { shop, loading: shopLoading } = useShop(shopId);
 
   // Then fetch menu using the shop's user ID (owner ID)
-  // We only fetch menu if shop is loaded and has a userId
   const { menuItems, loading: menuLoading } = useMenu(shop?.userId);
 
   // Get unique categories from menu items
@@ -109,7 +119,7 @@ const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId: st
     });
   }, [searchQuery, activeCategory, menuItems]);
 
-  // Show loading state if data is still being fetched
+  // Show loading state
   if (menuLoading || shopLoading) {
     return (
       <Layout>
@@ -120,100 +130,63 @@ const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId: st
     );
   }
 
-  // Show error state if shop data is not available
-  if (!shop) {
-    return (
-      <Layout>
-        <div className="flex justify-center items-center h-screen text-red-500">
-          Error: Shop not found or failed to load.
-        </div>
-      </Layout>
-    );
-  }
-
+  // Main Menu UI
   return (
-    <Layout onDashboardClick={() => setView('admin')} showDashboardLink={true}>
-      {/* Shop Profile Header */}
-      <ShopHeader shop={shop} />
+    <Layout>
+      <ShopHeader
+        shop={shop || MOCK_SHOP}
+        onShowAdmin={() => setView('admin')}
+      />
 
-      {/* Search Bar (Floating) */}
-      <div className="max-w-xl mx-auto px-4 -mt-16 relative z-20 mb-10">
-        <MotionDiv
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="relative group shadow-2xl rounded-full"
-        >
-          <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400 group-focus-within:text-gold-500 transition-colors" />
+      {/* Search and Filter Bar */}
+      <div className="sticky top-0 z-30 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-zinc-700 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder={`${t.search[language]}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-zinc-800 border-none rounded-full focus:ring-2 focus:ring-gold-500 outline-none"
+            />
           </div>
-          <input
-            type="text"
-            placeholder={t.search[language]}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full pl-12 pr-6 py-4 rounded-full border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-all"
-          />
-        </MotionDiv>
-      </div>
-
-      {/* Category Filter */}
-      <div className="sticky top-[72px] z-30 py-4 bg-gray-50/95 dark:bg-zinc-950/95 backdrop-blur-sm border-b border-gray-200 dark:border-zinc-800 mb-8">
-        <div className="max-w-7xl mx-auto px-4 overflow-x-auto no-scrollbar">
-          <div className="flex space-x-2 rtl:space-x-reverse min-w-max px-2">
-            {categories.map((cat, idx) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`
-                            px-5 py-2 rounded-full text-sm font-bold transition-all duration-300 border
-                            ${activeCategory === cat
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-black border-transparent shadow-md scale-105'
-                    : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800'}
-                        `}
-              >
-                {cat === 'All' ? t.all[language] : cat}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Product Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 min-h-[50vh]">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence>
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onSelect={setSelectedProduct}
-              />
-            ))}
-          </AnimatePresence>
+          <button className="p-2 bg-gray-100 dark:bg-zinc-800 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors">
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          </button>
         </div>
 
-        {filteredProducts.length === 0 && (
-          <MotionDiv
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-20"
-          >
-            <div className="inline-block p-4 rounded-full bg-gray-100 dark:bg-zinc-800 mb-4">
-              <Filter className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No items found.</p>
+        {/* Category Tabs */}
+        <div className="max-w-7xl mx-auto mt-3 flex gap-2 overflow-x-auto no-scrollbar">
+          {categories.map((category) => (
             <button
-              onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}
-              className="mt-4 text-gold-500 hover:text-gold-600 font-bold"
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`px-4 py-2 rounded-full font-medium whitespace-nowrap transition-all ${activeCategory === category
+                ? 'bg-gold-500 text-white'
+                : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700'
+                }`}
             >
-              Clear Filters
+              {category === 'All' ? t.all[language] : category}
             </button>
-          </MotionDiv>
-        )}
+          ))}
+        </div>
       </div>
 
-      {/* Interactive Elements */}
+      {/* Menu Grid */}
+      <div className="px-4 py-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onClick={() => setSelectedProduct(product)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Product Modal */}
       <ProductModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
@@ -224,30 +197,56 @@ const MenuApp: React.FC<{ setView: (v: 'customer' | 'admin') => void; shopId: st
   );
 };
 
-// Empty home page component
-const HomePage = () => {
-  return (
-    <Layout>
-      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
-        <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-4">
-          Welcome to Menu Platform
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-8">
-          Access your shop menu by visiting /your-shop-slug
-        </p>
-      </div>
-    </Layout>
-  );
-};
+// Main App Component with Routing
+function App() {
+  const [userData, setUserData] = useState<any>(null);
 
-const App = () => {
+  // Load user data from localStorage
+  useEffect(() => {
+    const userDataStr = localStorage.getItem('user_data');
+    if (userDataStr) {
+      try {
+        setUserData(JSON.parse(userDataStr));
+      } catch (e) {
+        console.error('Failed to parse user data:', e);
+      }
+    }
+  }, []);
+
   return (
-    <Routes>
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/:slug" element={<MenuAppWrapper />} />
-      <Route path="/" element={<HomePage />} />
-    </Routes>
+    <div className="min-h-screen bg-white dark:bg-slate-900">
+      {/* Navbar */}
+      <Navbar user={userData} />
+
+      <Routes>
+        {/* Auth callback route */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
+
+        {/* Provider dashboard routes */}
+        <Route path="/provider/:userId/*" element={
+          <ProviderProvider>
+            <ProviderDashboardWrapper />
+          </ProviderProvider>
+        } />
+
+        {/* Customer menu view - supports both userId and slug */}
+        <Route path="/:slug" element={<MenuAppWrapper />} />
+
+        {/* Home/landing page */}
+        <Route path="/" element={
+          <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
+            <UtensilsCrossed className="h-20 w-20 text-orange-500 mb-6" />
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Restaurant Menu App
+            </h1>
+            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-md">
+              Welcome to the menu management system. Enter a restaurant ID or use the link provided by your restaurant.
+            </p>
+          </div>
+        } />
+      </Routes>
+    </div>
   );
-};
+}
 
 export default App;
