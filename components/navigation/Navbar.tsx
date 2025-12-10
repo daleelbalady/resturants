@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, User, LogOut, Settings, Moon, Sun, Globe, Home, UtensilsCrossed } from 'lucide-react';
 import LoginDropdown from '../LoginDropdown';
+import { useConfig } from '../../contexts/ConfigContext';
 
 interface NavbarProps {
   user?: {
@@ -19,6 +20,7 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
+  const { language, setLanguage } = useConfig();
 
   const mainAppUrl = process.env.REACT_APP_MAIN_APP_URL || 'https://www.daleelbalady.com';
 
@@ -92,6 +94,15 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
               <Home className="h-4 w-4 inline mr-1" />
               Main Site
             </a>
+
+            {/* Language Toggle */}
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Toggle language"
+            >
+              <Globe className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+            </button>
 
             {/* Theme Toggle */}
             <button

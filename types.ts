@@ -50,6 +50,7 @@ export type DeliveryProvider = 'restaurant' | 'daleel_balady';
 
 export interface Table {
   id: string;
+  shopId?: string;
   label: string; // e.g., "T-1" or "Family Booth"
   capacity: number;
   isOccupied: boolean;
@@ -103,6 +104,8 @@ export interface Shop {
   isVerified: boolean;
   userId: string; // Owner ID for fetching menu
   ownerId?: string; // Alias
+  category?: { id: string; slug: string; name: string };
+  subCategory?: { id: string; slug: string; name: string };
 }
 
 export type Language = 'en' | 'ar';

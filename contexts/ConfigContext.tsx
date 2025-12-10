@@ -3,20 +3,28 @@ import { AppContextType, Language, Theme, Table } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { useTables } from '../hooks/useApi';
 
-const ConfigContext = createContext<AppContextType | undefined>(undefined);
+// Split contexts
+interface AppConfigContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  translations: typeof TRANSLATIONS;
+}
 
-export const ConfigProvider: React.FC<{ children: ReactNode; shopId?: string }> = ({ children, shopId = 'shop-1' }) => {
+interface ShopDataContextType {
+  tables: Table[];
+  addTable: (table: Table) => Promise<void>;
+  removeTable: (id: string) => Promise<void>;
+  updateTableStatus: (id: string, isOccupied: boolean) => Promise<void>;
+}
+
+const AppConfigContext = createContext<AppConfigContextType | undefined>(undefined);
+const ShopDataContext = createContext<ShopDataContextType | undefined>(undefined);
+
+export const AppConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('en');
   const [theme, setTheme] = useState<Theme>('dark');
-
-  // Fetch tables from API
-  const { tables: apiTables, createTable: apiCreateTable, updateTableStatus: apiUpdateTableStatus, deleteTable: apiDeleteTable } = useTables(shopId);
-  const [tables, setTables] = useState<Table[]>(apiTables);
-
-  // Update local tables when API tables change
-  useEffect(() => {
-    setTables(apiTables);
-  }, [apiTables]);
 
   useEffect(() => {
     // Apply theme class to html element
@@ -44,13 +52,34 @@ export const ConfigProvider: React.FC<{ children: ReactNode; shopId?: string }> 
     }
   }, [language]);
 
+  return (
+    <AppConfigContext.Provider value={{
+      language,
+      setLanguage,
+      theme,
+      setTheme,
+      translations: TRANSLATIONS
+    }}>
+      {children}
+    </AppConfigContext.Provider>
+  );
+};
+
+export const ShopDataProvider: React.FC<{ children: ReactNode; shopId?: string }> = ({ children, shopId = 'shop-1' }) => {
+  // Fetch tables from API
+  const { tables: apiTables, createTable: apiCreateTable, updateTableStatus: apiUpdateTableStatus, deleteTable: apiDeleteTable } = useTables(shopId);
+  const [tables, setTables] = useState<Table[]>(apiTables);
+
+  // Update local tables when API tables change
+  useEffect(() => {
+    setTables(apiTables);
+  }, [apiTables]);
+
   const addTable = async (table: Table) => {
     try {
       await apiCreateTable(table);
-      // Tables will be updated via useEffect when apiTables changes
     } catch (error) {
       console.error('Failed to add table:', error);
-      // Fallback to local state if API fails
       setTables(prev => [...prev, table]);
     }
   };
@@ -58,10 +87,8 @@ export const ConfigProvider: React.FC<{ children: ReactNode; shopId?: string }> 
   const removeTable = async (id: string) => {
     try {
       await apiDeleteTable(id);
-      // Tables will be updated via useEffect when apiTables changes
     } catch (error) {
       console.error('Failed to remove table:', error);
-      // Fallback to local state if API fails
       setTables(prev => prev.filter(t => t.id !== id));
     }
   };
@@ -69,33 +96,49 @@ export const ConfigProvider: React.FC<{ children: ReactNode; shopId?: string }> 
   const updateTableStatus = async (id: string, isOccupied: boolean) => {
     try {
       await apiUpdateTableStatus(id, isOccupied);
-      // Tables will be updated via useEffect when apiTables changes
     } catch (error) {
       console.error('Failed to update table status:', error);
-      // Fallback to local state if API fails
       setTables(prev => prev.map(t => t.id === id ? { ...t, isOccupied } : t));
     }
   };
 
   return (
-    <ConfigContext.Provider value={{
-      language,
-      setLanguage,
-      theme,
-      setTheme,
-      translations: TRANSLATIONS,
+    <ShopDataContext.Provider value={{
       tables,
       addTable,
       removeTable,
       updateTableStatus
     }}>
       {children}
-    </ConfigContext.Provider>
+    </ShopDataContext.Provider>
+  );
+};
+
+// Legacy ConfigProvider for backward compatibility (wraps both)
+export const ConfigProvider: React.FC<{ children: ReactNode; shopId?: string }> = ({ children, shopId }) => {
+  return (
+    <AppConfigProvider>
+      <ShopDataProvider shopId={shopId}>
+        {children}
+      </ShopDataProvider>
+    </AppConfigProvider>
   );
 };
 
 export const useConfig = () => {
-  const context = useContext(ConfigContext);
-  if (!context) throw new Error('useConfig must be used within a ConfigProvider');
-  return context;
+  const appConfig = useContext(AppConfigContext);
+  const shopData = useContext(ShopDataContext);
+
+  if (!appConfig) {
+    throw new Error('useConfig must be used within an AppConfigProvider');
+  }
+
+  // Return combined data, with fallback for shop data if missing
+  return {
+    ...appConfig,
+    tables: shopData?.tables || [],
+    addTable: shopData?.addTable || (async () => console.warn('ShopDataProvider missing')),
+    removeTable: shopData?.removeTable || (async () => console.warn('ShopDataProvider missing')),
+    updateTableStatus: shopData?.updateTableStatus || (async () => console.warn('ShopDataProvider missing')),
+  };
 };

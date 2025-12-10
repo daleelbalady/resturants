@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
+import { Shop } from '../types';
+import { useProviderShops } from '../hooks/useApi';
 
 interface User {
     id: string;
@@ -16,6 +18,10 @@ interface ProviderContextType {
     isAuthenticated: boolean;
     loading: boolean;
     logout: () => void;
+    shops: Shop[];
+    selectedShop: Shop | null;
+    setSelectedShop: (shop: Shop) => void;
+    refreshShops: () => void;
 }
 
 const ProviderContext = createContext<ProviderContextType | undefined>(undefined);
@@ -25,18 +31,14 @@ export const ProviderProvider: React.FC<{ children: ReactNode }> = ({ children }
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
+
+    const { shops, fetchShops, loading: shopsLoading } = useProviderShops();
 
     useEffect(() => {
         // Load user data and token from localStorage
-        // Check both old and new keys for compatibility
         const storedToken = localStorage.getItem('daleel-token') || localStorage.getItem('authToken');
         const storedUserData = localStorage.getItem('daleel-user') || localStorage.getItem('user_data');
-
-        console.log('[ProviderContext] Checking auth:', {
-            hasToken: !!storedToken,
-            hasUserData: !!storedUserData,
-            urlUserId: userId,
-        });
 
         if (storedToken) {
             setToken(storedToken);
@@ -45,26 +47,26 @@ export const ProviderProvider: React.FC<{ children: ReactNode }> = ({ children }
         if (storedUserData) {
             try {
                 const userData = JSON.parse(storedUserData);
-                console.log('[ProviderContext] User data:', userData);
                 setUser(userData);
-
-                // Verify that the logged-in user matches the userId in the URL
-                if (userId && userData.id !== userId) {
-                    console.warn('[ProviderContext] User ID mismatch:', {
-                        urlUserId: userId,
-                        loggedInUserId: userData.id,
-                    });
-                    console.warn('User ID mismatch - user is not authorized for this shop');
-                } else {
-                    console.log('[ProviderContext] User ID matches!');
-                }
             } catch (error) {
                 console.error('Failed to parse user data:', error);
             }
         }
 
         setLoading(false);
-    }, [userId]);
+    }, []);
+
+    useEffect(() => {
+        if (token && user) {
+            fetchShops(token);
+        }
+    }, [token, user]);
+
+    useEffect(() => {
+        if (shops.length > 0 && !selectedShop) {
+            setSelectedShop(shops[0]);
+        }
+    }, [shops]);
 
     const logout = () => {
         localStorage.removeItem('authToken');
@@ -79,8 +81,12 @@ export const ProviderProvider: React.FC<{ children: ReactNode }> = ({ children }
         userId: userId || user?.id || null,
         token,
         isAuthenticated: !!token && !!user,
-        loading,
+        loading: loading || shopsLoading,
         logout,
+        shops,
+        selectedShop,
+        setSelectedShop,
+        refreshShops: () => token && fetchShops(token),
     };
 
     return <ProviderContext.Provider value={value}>{children}</ProviderContext.Provider>;

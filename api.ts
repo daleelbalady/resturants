@@ -7,7 +7,7 @@ export const API_ENDPOINTS = {
     getShopDetails: (identifier: string) => `${MAIN_API_BASE_URL}/api/shops/public/details/${identifier}`,
 
     // Shop endpoints (Go backend - for provider dashboard)
-    getShop: (shopId: string) => `${MENU_API_BASE_URL}/api/shop/my`,
+    getProviderShops: () => `${MENU_API_BASE_URL}/api/shop/my`,
     updateShop: (shopId: string) => `${MENU_API_BASE_URL}/api/shop/${shopId}`,
 
     // Menu endpoints (Go backend) - FIXED: Use userId not shopId

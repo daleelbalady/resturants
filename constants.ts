@@ -28,7 +28,7 @@ export const TRANSLATIONS = {
   items: { en: "Items", ar: "عناصر" },
   customizations: { en: "Customizations", ar: "إضافات وتعديلات" },
   from: { en: "From", ar: "يبدأ من" },
-  
+
   // Checkout Wizard
   selectMethod: { en: "How would you like your order?", ar: "كيف تفضل استلام طلبك؟" },
   dineIn: { en: "Dine In", ar: "تناول في المطعم" },
@@ -52,7 +52,7 @@ export const TRANSLATIONS = {
   placeOrder: { en: "Place Order", ar: "إرسال الطلب" },
   back: { en: "Back", ar: "رجوع" },
   next: { en: "Next", ar: "التالي" },
-  
+
   // Dashboard General
   dashboard: { en: "Dashboard", ar: "لوحة التحكم" },
   providerDashboard: { en: "Provider Dashboard", ar: "لوحة التاجر" },
@@ -63,20 +63,21 @@ export const TRANSLATIONS = {
   settings: { en: "Settings", ar: "الإعدادات" },
   tables: { en: "Table Management", ar: "إدارة الطاولات" },
   addTable: { en: "Add Table", ar: "إضافة طاولة" },
-  
+  selectShop: { en: "Select Shop", ar: "اختر المتجر" },
+
   // Stats
   revenue: { en: "Total Revenue", ar: "إجمالي الإيرادات" },
   activeOrders: { en: "Active Orders", ar: "الطلبات النشطة" },
   totalOrders: { en: "Total Orders", ar: "كل الطلبات" },
   recentActivity: { en: "Recent Activity", ar: "النشاط الأخير" },
-  
+
   // Orders
   orderId: { en: "Order #", ar: "طلب رقم " },
   table: { en: "Table", ar: "طاولة" },
   takeaway: { en: "Takeaway", ar: "تيك أواي" },
   cancelOrder: { en: "Cancel", ar: "إلغاء" },
   advanceStatus: { en: "Advance Status", ar: "تغيير الحالة" },
-  
+
   // Product Form
   newProduct: { en: "New Product", ar: "منتج جديد" },
   editProduct: { en: "Edit Product", ar: "تعديل منتج" },
@@ -88,7 +89,7 @@ export const TRANSLATIONS = {
   imageURL: { en: "Image URL", ar: "رابط الصورة" },
   price: { en: "Price (EGP)", ar: "السعر (ج.م)" },
   category: { en: "Category", ar: "القسم" },
-  
+
   // Modifiers
   modifiersAddons: { en: "Modifiers & Add-ons", ar: "الإضافات والخيارات" },
   addGroup: { en: "Add Group", ar: "إضافة مجموعة" },
@@ -96,7 +97,7 @@ export const TRANSLATIONS = {
   min: { en: "Min", ar: "أدنى" },
   addOption: { en: "Add Option", ar: "إضافة خيار" },
   optionNameEn: { en: "Option (EN)", ar: "الخيار (EN)" },
-  
+
   // Docs
   devApi: { en: "Developer API & Schema", ar: "واجهة المطورين وقاعدة البيانات" },
   devDesc: { en: "Use the following specifications to build the backend for this dashboard.", ar: "استخدم المواصفات التالية لبناء النظام الخلفي للوحة التحكم." },
@@ -127,12 +128,12 @@ export const MOCK_SHOP: Shop = {
 };
 
 export const MOCK_TABLES: Table[] = [
-    { id: 't1', label: 'T-1', capacity: 2, isOccupied: false },
-    { id: 't2', label: 'T-2', capacity: 2, isOccupied: true },
-    { id: 't3', label: 'T-3', capacity: 4, isOccupied: false },
-    { id: 't4', label: 'T-4', capacity: 4, isOccupied: false },
-    { id: 't5', label: 'Family-1', capacity: 6, isOccupied: false },
-    { id: 't6', label: 'VIP-1', capacity: 8, isOccupied: true },
+  { id: 't1', label: 'T-1', capacity: 2, isOccupied: false },
+  { id: 't2', label: 'T-2', capacity: 2, isOccupied: true },
+  { id: 't3', label: 'T-3', capacity: 4, isOccupied: false },
+  { id: 't4', label: 'T-4', capacity: 4, isOccupied: false },
+  { id: 't5', label: 'Family-1', capacity: 6, isOccupied: false },
+  { id: 't6', label: 'VIP-1', capacity: 8, isOccupied: true },
 ];
 
 export const MOCK_MENU: MenuItem[] = [
@@ -248,7 +249,7 @@ export const MOCK_MENU: MenuItem[] = [
     category: "Starters",
     type: "food",
     modifierGroups: [
-        {
+      {
         id: "g_protein",
         name: { en: "Add Protein", ar: "أضف بروتين" },
         minSelection: 0,
@@ -269,79 +270,79 @@ export const MOCK_MENU: MenuItem[] = [
     category: "Dessert",
     type: "dessert",
     modifierGroups: [
-        {
-            id: "g_topping",
-            name: {en: "Topping", ar: "الإضافات"},
-            minSelection: 1,
-            maxSelection: 1,
-            options: [
-                { id: "top_berry", name: {en: "Strawberry", ar: "فراولة"}, priceDelta: 0 },
-                { id: "top_blue", name: {en: "Blueberry", ar: "توت أزرق"}, priceDelta: 0 },
-                { id: "top_choc", name: {en: "Chocolate", ar: "شوكولاتة"}, priceDelta: 0 },
-            ]
-        }
+      {
+        id: "g_topping",
+        name: { en: "Topping", ar: "الإضافات" },
+        minSelection: 1,
+        maxSelection: 1,
+        options: [
+          { id: "top_berry", name: { en: "Strawberry", ar: "فراولة" }, priceDelta: 0 },
+          { id: "top_blue", name: { en: "Blueberry", ar: "توت أزرق" }, priceDelta: 0 },
+          { id: "top_choc", name: { en: "Chocolate", ar: "شوكولاتة" }, priceDelta: 0 },
+        ]
+      }
     ]
   }
 ];
 
 export const MOCK_ORDERS: Order[] = [
-    {
-        id: "ORD-1024",
-        customerName: "Ahmed Ali",
-        customerPhone: "0100000001",
-        method: "dine_in",
-        tableId: "t1",
-        guests: 2,
-        items: [
-            {
-                cartId: "c1",
-                menuItem: MOCK_MENU[0],
-                quantity: 1,
-                selectedModifiers: {"g_weight": ["opt_300g"], "g_doneness": ["opt_med"], "g_sides": ["side_fries", "side_veg"]},
-                totalPrice: 650
-            }
-        ],
-        totalAmount: 650,
-        status: "pending",
-        createdAt: "2024-05-10T14:30:00"
-    },
-    {
-        id: "ORD-1023",
-        customerName: "Sarah Smith",
-        customerPhone: "0100000002",
-        method: "delivery",
-        deliveryProvider: "restaurant",
-        deliveryAddress: "123 Nile St, Zamalek, Apt 4",
-        deliveryLocation: { lat: 30.0444, lng: 31.2357 },
-        items: [
-            {
-                cartId: "c2",
-                menuItem: MOCK_MENU[1],
-                quantity: 2,
-                selectedModifiers: {"g_milk": ["milk_oat"], "g_size": ["sz_lrg"]},
-                totalPrice: 280
-            }
-        ],
-        totalAmount: 280,
-        status: "preparing",
-        createdAt: "2024-05-10T14:25:00"
-    },
-    {
-        id: "ORD-1022",
-        customerName: "Mike Johnson",
-        customerPhone: "0100000003",
-        method: "dine_in",
-        items: [
-             {
-                cartId: "c3",
-                menuItem: MOCK_MENU[3],
-                quantity: 1,
-                selectedModifiers: {"g_topping": ["top_berry"]},
-                totalPrice: 120
-            }
-        ],
-        totalAmount: 120,
-        status: "ready",
-        createdAt: "2024-05-10T14:15:00"
-    }
+  {
+    id: "ORD-1024",
+    customerName: "Ahmed Ali",
+    customerPhone: "0100000001",
+    method: "dine_in",
+    tableId: "t1",
+    guests: 2,
+    items: [
+      {
+        cartId: "c1",
+        menuItem: MOCK_MENU[0],
+        quantity: 1,
+        selectedModifiers: { "g_weight": ["opt_300g"], "g_doneness": ["opt_med"], "g_sides": ["side_fries", "side_veg"] },
+        totalPrice: 650
+      }
+    ],
+    totalAmount: 650,
+    status: "pending",
+    createdAt: "2024-05-10T14:30:00"
+  },
+  {
+    id: "ORD-1023",
+    customerName: "Sarah Smith",
+    customerPhone: "0100000002",
+    method: "delivery",
+    deliveryProvider: "restaurant",
+    deliveryAddress: "123 Nile St, Zamalek, Apt 4",
+    deliveryLocation: { lat: 30.0444, lng: 31.2357 },
+    items: [
+      {
+        cartId: "c2",
+        menuItem: MOCK_MENU[1],
+        quantity: 2,
+        selectedModifiers: { "g_milk": ["milk_oat"], "g_size": ["sz_lrg"] },
+        totalPrice: 280
+      }
+    ],
+    totalAmount: 280,
+    status: "preparing",
+    createdAt: "2024-05-10T14:25:00"
+  },
+  {
+    id: "ORD-1022",
+    customerName: "Mike Johnson",
+    customerPhone: "0100000003",
+    method: "dine_in",
+    items: [
+      {
+        cartId: "c3",
+        menuItem: MOCK_MENU[3],
+        quantity: 1,
+        selectedModifiers: { "g_topping": ["top_berry"] },
+        totalPrice: 120
+      }
+    ],
+    totalAmount: 120,
+    status: "ready",
+    createdAt: "2024-05-10T14:15:00"
+  }
 ];

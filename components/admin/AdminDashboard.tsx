@@ -383,19 +383,24 @@ const SystemDocs = () => {
 
 
 // --- SETTINGS TAB ---
-const SettingsTab = () => {
-    const { translations, language, tables, addTable, removeTable, updateTableStatus } = useConfig();
+interface SettingsTabProps {
+    tables: Table[];
+    onAddTable: (data: { label: string, capacity: number }) => void;
+    onRemoveTable: (id: string) => void;
+    onUpdateStatus: (id: string, isOccupied: boolean) => void;
+}
+
+const SettingsTab: React.FC<SettingsTabProps> = ({ tables, onAddTable, onRemoveTable, onUpdateStatus }) => {
+    const { translations, language } = useConfig();
     const t = translations;
     const [newTableLabel, setNewTableLabel] = useState('');
     const [newTableCap, setNewTableCap] = useState(2);
 
     const handleAddTable = () => {
         if (!newTableLabel) return;
-        addTable({
-            id: Date.now().toString(),
+        onAddTable({
             label: newTableLabel,
-            capacity: newTableCap,
-            isOccupied: false
+            capacity: newTableCap
         });
         setNewTableLabel('');
     };
@@ -431,13 +436,13 @@ const SettingsTab = () => {
                         <div key={table.id} className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50">
                             <div className="flex justify-between items-start mb-2">
                                 <span className="font-bold">{table.label}</span>
-                                <button onClick={() => removeTable(table.id)} className="text-red-500 hover:bg-red-100 p-1 rounded">
+                                <button onClick={() => onRemoveTable(table.id)} className="text-red-500 hover:bg-red-100 p-1 rounded">
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
                             <div className="text-sm text-gray-500 mb-2">{table.capacity} {t.capacity[language]}</div>
                             <button
-                                onClick={() => updateTableStatus(table.id, !table.isOccupied)}
+                                onClick={() => onUpdateStatus(table.id, !table.isOccupied)}
                                 className={`w-full text-xs py-1 rounded font-bold ${table.isOccupied ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
                             >
                                 {table.isOccupied ? t.occupied[language] : t.available[language]}
@@ -458,15 +463,15 @@ import { ShopManagementTab } from './ShopManagementTab';
 
 export const AdminDashboard = () => {
     const { translations, language } = useConfig();
-    const { userId, token, isAuthenticated, user } = useProvider();
+    const { userId, token, isAuthenticated, user, shops, selectedShop, setSelectedShop } = useProvider();
     const t = translations;
     const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'shop' | 'settings' | 'docs'>('overview');
 
     // API Hooks - use userId from context
     const { orders, loading: ordersLoading, fetchOrders, updateOrderStatus } = useOrders();
     const { menuItems, loading: menuLoading, refetch: refetchMenu } = useMenu(userId || undefined);
-    const { tables, loading: tablesLoading, refetch: refetchTables } = useTables(userId || '');
-    const { createMenuItem, updateMenuItem, deleteMenuItem } = useMenuManagement();
+    const { tables, loading: tablesLoading, refetch: refetchTables, createTable, updateTableStatus: updateTableStatusApi, deleteTable } = useTables(selectedShop?.id || '');
+    const { createMenuItem, updateMenuItem, deleteMenuItem } = useMenuManagement(selectedShop?.id || '');
 
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
     const [isCreating, setIsCreating] = useState(false);
@@ -475,6 +480,24 @@ export const AdminDashboard = () => {
     const [filterStatus, setFilterStatus] = useState<'all' | OrderStatus>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState('');
+
+    // Derived State
+    const popularItems = React.useMemo(() => {
+        const itemCounts: Record<string, number> = {};
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                itemCounts[item.menuItem.id] = (itemCounts[item.menuItem.id] || 0) + item.quantity;
+            });
+        });
+        return Object.entries(itemCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5)
+            .map(([id, count]) => {
+                const menuItem = menuItems.find(m => m.id === id);
+                return menuItem ? { ...menuItem, count } : null;
+            })
+            .filter(Boolean);
+    }, [orders, menuItems]);
 
     // Fetch orders on mount
     React.useEffect(() => {
@@ -613,8 +636,7 @@ export const AdminDashboard = () => {
     const handleCreateTable = async (data: { label: string, capacity: number }) => {
         if (!token) return;
         try {
-            await api.post(API_ENDPOINTS.createTable(), { ...data, shopId: user?.id || '' }, token);
-            refetchTables();
+            await createTable({ ...data, shopId: selectedShop?.id || '' });
         } catch (error) {
             console.error("Failed to create table", error);
             alert("Failed to create table");
@@ -624,8 +646,7 @@ export const AdminDashboard = () => {
     const handleDeleteTable = async (id: string) => {
         if (!token || !window.confirm("Are you sure?")) return;
         try {
-            await api.delete(API_ENDPOINTS.deleteTable(id), token);
-            refetchTables();
+            await deleteTable(id);
         } catch (error) {
             console.error("Failed to delete table", error);
             alert("Failed to delete table");
@@ -657,6 +678,30 @@ export const AdminDashboard = () => {
                             <span className="font-bold text-gray-900 dark:text-white">
                                 {t.providerDashboard[language]}
                             </span>
+                        </div>
+
+                        {/* Shop Selector */}
+                        <div className="mb-6 px-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">
+                                {t.selectShop?.[language] || 'Select Shop'}
+                            </label>
+                            <div className="relative">
+                                <select
+                                    value={selectedShop?.id || ''}
+                                    onChange={(e) => {
+                                        const shop = shops.find(s => s.id === e.target.value);
+                                        if (shop) setSelectedShop(shop);
+                                    }}
+                                    className="w-full appearance-none bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg py-2 pl-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gold-500"
+                                >
+                                    {shops.map(shop => (
+                                        <option key={shop.id} value={shop.id}>
+                                            {language === 'ar' ? shop.name_ar || shop.name : shop.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                            </div>
                         </div>
 
                         <nav className="space-y-1">
@@ -738,22 +783,7 @@ export const AdminDashboard = () => {
                                 <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800">
                                     <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-gold-500" /> Popular Items</h3>
                                     <div className="space-y-4">
-                                        {React.useMemo(() => {
-                                            const itemCounts: Record<string, number> = {};
-                                            orders.forEach(order => {
-                                                order.items.forEach(item => {
-                                                    itemCounts[item.menuItem.id] = (itemCounts[item.menuItem.id] || 0) + item.quantity;
-                                                });
-                                            });
-                                            return Object.entries(itemCounts)
-                                                .sort(([, a], [, b]) => b - a)
-                                                .slice(0, 5)
-                                                .map(([id, count]) => {
-                                                    const menuItem = menuItems.find(m => m.id === id);
-                                                    return menuItem ? { ...menuItem, count } : null;
-                                                })
-                                                .filter(Boolean);
-                                        }, [orders, menuItems]).map((item: any) => (
+                                        {popularItems.map((item: any) => (
                                             <div key={item.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors">
                                                 <div className="flex items-center gap-3">
                                                     <img src={item.image} className="w-10 h-10 rounded-lg object-cover" alt="" />
@@ -1009,7 +1039,14 @@ export const AdminDashboard = () => {
                     {activeTab === 'shop' && <ShopManagementTab />}
 
                     {/* --- SETTINGS TAB --- */}
-                    {activeTab === 'settings' && <SettingsTab />}
+                    {activeTab === 'settings' && (
+                        <SettingsTab
+                            tables={tables}
+                            onAddTable={handleCreateTable}
+                            onRemoveTable={handleDeleteTable}
+                            onUpdateStatus={updateTableStatusApi}
+                        />
+                    )}
 
                     {/* --- DOCS TAB --- */}
                     {activeTab === 'docs' && <SystemDocs />}

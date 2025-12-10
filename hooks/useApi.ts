@@ -34,6 +34,29 @@ export const useShop = (shopId: string = DEFAULT_SHOP_ID) => {
     return { shop, loading, error, refetch: () => { } };
 };
 
+// Hook to fetch provider shops
+export const useProviderShops = () => {
+    const [shops, setShops] = useState<Shop[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchShops = async (token: string) => {
+        try {
+            setLoading(true);
+            const data = await api.get(API_ENDPOINTS.getProviderShops(), token);
+            setShops(data.shops || []);
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch shops');
+            console.error('Error fetching shops:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { shops, loading, error, fetchShops };
+};
+
 // Hook to fetch menu items
 export const useMenu = (userId?: string) => {
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -91,7 +114,7 @@ export const useTables = (shopId: string = DEFAULT_SHOP_ID) => {
 
     const createTable = async (table: Omit<Table, 'id'>) => {
         try {
-            const token = localStorage.getItem('authToken'); // Assuming token is stored
+            const token = localStorage.getItem('daleel-token') || localStorage.getItem('authToken');
             await api.post(API_ENDPOINTS.createTable(), table, token || undefined);
             await fetchTables();
         } catch (err) {
@@ -102,7 +125,7 @@ export const useTables = (shopId: string = DEFAULT_SHOP_ID) => {
 
     const updateTableStatus = async (tableId: string, isOccupied: boolean) => {
         try {
-            const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem('daleel-token') || localStorage.getItem('authToken');
             await api.put(API_ENDPOINTS.updateTableStatus(tableId), { isOccupied }, token || undefined);
             await fetchTables();
         } catch (err) {
@@ -113,7 +136,7 @@ export const useTables = (shopId: string = DEFAULT_SHOP_ID) => {
 
     const deleteTable = async (tableId: string) => {
         try {
-            const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem('daleel-token') || localStorage.getItem('authToken');
             await api.delete(API_ENDPOINTS.deleteTable(tableId), token || undefined);
             await fetchTables();
         } catch (err) {
