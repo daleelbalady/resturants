@@ -225,7 +225,7 @@ const MenuForm = ({ initialData, onSave, onCancel, existingCategories = [] }: { 
                                     />
                                     <div className="flex items-center gap-2 text-xs">
                                         <span>{t.min[language]}:</span>
-                                        <input type="number" className="w-12 p-1 rounded text-center" value={group.minSelection}
+                                        <input type="number" className="w-12 p-1 dark:bg-stone-800 bg-stone-200 rounded text-center" value={group.minSelection}
                                             onChange={(e) => {
                                                 const newGroups = [...formData.modifierGroups!];
                                                 newGroups[idx].minSelection = parseInt(e.target.value);
@@ -233,7 +233,7 @@ const MenuForm = ({ initialData, onSave, onCancel, existingCategories = [] }: { 
                                             }}
                                         />
                                         <span>{t.max[language]}:</span>
-                                        <input type="number" className="w-12 p-1 rounded text-center" value={group.maxSelection}
+                                        <input type="number" className="w-12 p-1 dark:bg-stone-800 bg-stone-200 rounded text-center" value={group.maxSelection}
                                             onChange={(e) => {
                                                 const newGroups = [...formData.modifierGroups!];
                                                 newGroups[idx].maxSelection = parseInt(e.target.value);
@@ -290,96 +290,6 @@ const MenuForm = ({ initialData, onSave, onCancel, existingCategories = [] }: { 
         </div>
     )
 }
-
-// --- SYSTEM DOCS COMPONENT ---
-const SystemDocs = () => {
-    const { translations, language } = useConfig();
-    const t = translations;
-
-    return (
-        <div className="space-y-6">
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/50">
-                <h3 className="text-lg font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
-                    <Code className="w-5 h-5" /> {t.devApi[language]}
-                </h3>
-                <p className="text-blue-600 dark:text-blue-400 mb-4">
-                    {t.devDesc[language]}
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
-                    <h4 className="font-bold text-gray-900 dark:text-white mb-4">{t.routes[language]}</h4>
-                    <div className="space-y-2 font-mono text-sm">
-                        <div className="flex gap-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                            <span className="text-green-600 dark:text-green-400 font-bold w-16">GET</span>
-                            <span className="text-gray-600 dark:text-gray-400">/api/shop</span>
-                        </div>
-                        <div className="flex gap-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                            <span className="text-orange-600 dark:text-orange-400 font-bold w-16">PUT</span>
-                            <span className="text-gray-600 dark:text-gray-400">/api/shop</span>
-                        </div>
-                        <div className="flex gap-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                            <span className="text-green-600 dark:text-green-400 font-bold w-16">GET</span>
-                            <span className="text-gray-600 dark:text-gray-400">/api/menu</span>
-                        </div>
-                        <div className="flex gap-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                            <span className="text-blue-600 dark:text-blue-400 font-bold w-16">POST</span>
-                            <span className="text-gray-600 dark:text-gray-400">/api/menu</span>
-                        </div>
-                        <div className="flex gap-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                            <span className="text-red-600 dark:text-red-400 font-bold w-16">DELETE</span>
-                            <span className="text-gray-600 dark:text-gray-400">/api/menu/:id</span>
-                        </div>
-                        <div className="flex gap-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                            <span className="text-green-600 dark:text-green-400 font-bold w-16">GET</span>
-                            <span className="text-gray-600 dark:text-gray-400">/api/orders</span>
-                        </div>
-                        <div className="flex gap-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                            <span className="text-orange-600 dark:text-orange-400 font-bold w-16">PUT</span>
-                            <span className="text-gray-600 dark:text-gray-400">/api/orders/:id/status</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
-                    <h4 className="font-bold text-gray-900 dark:text-white mb-4">{t.schema[language]}</h4>
-                    <pre className="text-xs font-mono bg-gray-50 dark:bg-black p-4 rounded-xl overflow-x-auto text-gray-600 dark:text-gray-400" dir="ltr">
-                        {`// Collection: shops
-{
-  _id: ObjectId,
-  name: { en: String, ar: String },
-  ownerId: String,
-  settings: Object
-}
-
-// Collection: menu_items
-{
-  _id: ObjectId,
-  shopId: ObjectId,
-  name: { en: String, ar: String },
-  basePrice: Number,
-  modifiers: Array<ModifierGroup>
-}
-
-// Collection: orders
-{
-  _id: ObjectId,
-  shopId: ObjectId,
-  method: 'dine_in' | 'delivery',
-  tableId?: String,
-  deliveryProvider?: 'restaurant' | 'daleel_balady',
-  deliveryLocation?: { lat: Number, lng: Number },
-  items: Array<CartItem>,
-  total: Number,
-  status: Enum['pending', 'ready'...]
-}`}
-                    </pre>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 
 // --- SETTINGS TAB ---
@@ -465,7 +375,7 @@ export const AdminDashboard = () => {
     const { translations, language } = useConfig();
     const { userId, token, isAuthenticated, user, shops, selectedShop, setSelectedShop } = useProvider();
     const t = translations;
-    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'shop' | 'settings' | 'docs'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'shop' | 'settings'>('overview');
 
     // API Hooks - use userId from context
     const { orders, loading: ordersLoading, fetchOrders, updateOrderStatus } = useOrders();
@@ -599,7 +509,6 @@ export const AdminDashboard = () => {
         { id: 'tables', icon: Users, label: t.tables[language] },
         { id: 'shop', icon: ShoppingBag, label: 'Shop Profile' },
         { id: 'settings', icon: Settings, label: t.settings[language] },
-        { id: 'docs', icon: Code, label: t.apiDocs[language] },
     ];
 
     const handleSaveProduct = async (product: MenuItem) => {
@@ -1047,9 +956,6 @@ export const AdminDashboard = () => {
                             onUpdateStatus={updateTableStatusApi}
                         />
                     )}
-
-                    {/* --- DOCS TAB --- */}
-                    {activeTab === 'docs' && <SystemDocs />}
 
                 </main>
             </div>
