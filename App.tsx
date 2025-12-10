@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { Search, Filter, ShoppingBag, UtensilsCrossed } from 'lucide-react';
-import { ConfigProvider, useConfig } from './contexts/ConfigContext';
+import { AppConfigProvider, ShopDataProvider, useConfig } from './contexts/ConfigContext';
 import { CartProvider, useCart } from './contexts/CartContext';
 import { ProviderProvider, useProvider } from './contexts/ProviderContext';
 import { Layout } from './components/Layout';

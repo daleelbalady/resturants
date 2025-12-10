@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { Shop } from '../types';
 import { useProviderShops } from '../hooks/useApi';
@@ -62,11 +62,20 @@ export const ProviderProvider: React.FC<{ children: ReactNode }> = ({ children }
         }
     }, [token, user]);
 
-    useEffect(() => {
-        if (shops.length > 0 && !selectedShop) {
-            setSelectedShop(shops[0]);
-        }
+    // Filter shops to only show restaurants and cafes (matching listing-tree.tsx logic)
+    const restaurantShops = useMemo(() => {
+        return shops.filter(shop =>
+            shop.category?.slug === 'restaurants' ||
+            shop.category?.slug === 'category.restaurants' ||
+            shop.subCategory?.slug?.includes('cafes')
+        );
     }, [shops]);
+
+    useEffect(() => {
+        if (restaurantShops.length > 0 && !selectedShop) {
+            setSelectedShop(restaurantShops[0]);
+        }
+    }, [restaurantShops]);
 
     const logout = () => {
         localStorage.removeItem('authToken');
@@ -83,7 +92,7 @@ export const ProviderProvider: React.FC<{ children: ReactNode }> = ({ children }
         isAuthenticated: !!token && !!user,
         loading: loading || shopsLoading,
         logout,
-        shops,
+        shops: restaurantShops, // Only show restaurant/cafe shops
         selectedShop,
         setSelectedShop,
         refreshShops: () => token && fetchShops(token),

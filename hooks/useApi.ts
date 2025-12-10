@@ -95,6 +95,12 @@ export const useTables = (shopId: string = DEFAULT_SHOP_ID) => {
     const [error, setError] = useState<string | null>(null);
 
     const fetchTables = async () => {
+        if (!shopId) {
+            setTables([]);
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             const data = await api.get(API_ENDPOINTS.getTables(shopId));
