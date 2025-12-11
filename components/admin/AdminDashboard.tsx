@@ -144,13 +144,13 @@ const MenuForm = ({ initialData, onSave, onCancel, existingCategories = [] }: { 
                         <label className="text-xs font-bold uppercase text-gray-500">{t.productNameEn[language]}</label>
                         <input className="w-full p-2 rounded bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700"
                             value={formData.name?.en}
-                            onChange={e => setFormData({ ...formData, name: { ...formData.name!, en: e.target.value } })} />
+                            onChange={e => setFormData({ ...formData, name: { ...(formData.name || { en: '', ar: '' }), en: e.target.value } })} />
                     </div>
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase text-gray-500">{t.productNameAr[language]}</label>
                         <input className="w-full p-2 rounded bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-right"
                             value={formData.name?.ar}
-                            onChange={e => setFormData({ ...formData, name: { ...formData.name!, ar: e.target.value } })} />
+                            onChange={e => setFormData({ ...formData, name: { ...(formData.name || { en: '', ar: '' }), ar: e.target.value } })} />
                     </div>
 
                     <div className="col-span-2 space-y-2">
@@ -218,26 +218,32 @@ const MenuForm = ({ initialData, onSave, onCancel, existingCategories = [] }: { 
                                         placeholder={t.groupNamePlaceholder[language]}
                                         value={group.name.en}
                                         onChange={(e) => {
-                                            const newGroups = [...formData.modifierGroups!];
-                                            newGroups[idx].name.en = e.target.value;
-                                            setFormData({ ...formData, modifierGroups: newGroups });
+                                            const newGroups = [...(formData.modifierGroups || [])];
+                                            if (newGroups[idx]) {
+                                                newGroups[idx] = { ...newGroups[idx], name: { ...newGroups[idx].name, en: e.target.value } };
+                                                setFormData({ ...formData, modifierGroups: newGroups });
+                                            }
                                         }}
                                     />
                                     <div className="flex items-center gap-2 text-xs">
                                         <span>{t.min[language]}:</span>
                                         <input type="number" className="w-12 p-1 dark:bg-stone-800 bg-stone-200 rounded text-center" value={group.minSelection}
                                             onChange={(e) => {
-                                                const newGroups = [...formData.modifierGroups!];
-                                                newGroups[idx].minSelection = parseInt(e.target.value);
-                                                setFormData({ ...formData, modifierGroups: newGroups });
+                                                const newGroups = [...(formData.modifierGroups || [])];
+                                                if (newGroups[idx]) {
+                                                    newGroups[idx] = { ...newGroups[idx], minSelection: parseInt(e.target.value) };
+                                                    setFormData({ ...formData, modifierGroups: newGroups });
+                                                }
                                             }}
                                         />
                                         <span>{t.max[language]}:</span>
                                         <input type="number" className="w-12 p-1 dark:bg-stone-800 bg-stone-200 rounded text-center" value={group.maxSelection}
                                             onChange={(e) => {
-                                                const newGroups = [...formData.modifierGroups!];
-                                                newGroups[idx].maxSelection = parseInt(e.target.value);
-                                                setFormData({ ...formData, modifierGroups: newGroups });
+                                                const newGroups = [...(formData.modifierGroups || [])];
+                                                if (newGroups[idx]) {
+                                                    newGroups[idx] = { ...newGroups[idx], maxSelection: parseInt(e.target.value) };
+                                                    setFormData({ ...formData, modifierGroups: newGroups });
+                                                }
                                             }}
                                         />
                                     </div>
@@ -251,9 +257,13 @@ const MenuForm = ({ initialData, onSave, onCancel, existingCategories = [] }: { 
                                                 value={opt.name.en}
                                                 placeholder={t.optionNameEn[language]}
                                                 onChange={(e) => {
-                                                    const newGroups = [...formData.modifierGroups!];
-                                                    newGroups[idx].options[oIdx].name.en = e.target.value;
-                                                    setFormData({ ...formData, modifierGroups: newGroups });
+                                                    const newGroups = [...(formData.modifierGroups || [])];
+                                                    if (newGroups[idx] && newGroups[idx].options[oIdx]) {
+                                                        const newOptions = [...newGroups[idx].options];
+                                                        newOptions[oIdx] = { ...newOptions[oIdx], name: { ...newOptions[oIdx].name, en: e.target.value } };
+                                                        newGroups[idx] = { ...newGroups[idx], options: newOptions };
+                                                        setFormData({ ...formData, modifierGroups: newGroups });
+                                                    }
                                                 }}
                                             />
                                             <div className="flex items-center gap-1">
@@ -261,9 +271,13 @@ const MenuForm = ({ initialData, onSave, onCancel, existingCategories = [] }: { 
                                                 <input type="number" className="w-16 p-1.5 text-sm rounded border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                                                     value={opt.priceDelta}
                                                     onChange={(e) => {
-                                                        const newGroups = [...formData.modifierGroups!];
-                                                        newGroups[idx].options[oIdx].priceDelta = parseFloat(e.target.value);
-                                                        setFormData({ ...formData, modifierGroups: newGroups });
+                                                        const newGroups = [...(formData.modifierGroups || [])];
+                                                        if (newGroups[idx] && newGroups[idx].options[oIdx]) {
+                                                            const newOptions = [...newGroups[idx].options];
+                                                            newOptions[oIdx] = { ...newOptions[oIdx], priceDelta: parseFloat(e.target.value) };
+                                                            newGroups[idx] = { ...newGroups[idx], options: newOptions };
+                                                            setFormData({ ...formData, modifierGroups: newGroups });
+                                                        }
                                                     }}
                                                 />
                                             </div>
