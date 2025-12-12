@@ -61,10 +61,12 @@ const AuthCallback = () => {
                 // Otherwise show customer view
                 if (authenticatedUserId === targetUserId && data.user.role === 'PROVIDER') {
                     // Provider accessing their own restaurant
-                    navigate(`/provider/${authenticatedUserId}`);
+                    // Force reload to update auth state
+                    window.location.href = `/provider/${authenticatedUserId}`;
                 } else {
                     // Customer or provider viewing someone else's menu
-                    navigate(`/${targetUserId}`);
+                    // Force reload to update auth state
+                    window.location.href = `/${targetUserId}`;
                 }
 
             } catch (error) {
